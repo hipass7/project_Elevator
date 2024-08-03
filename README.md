@@ -26,6 +26,14 @@ Elevator 동작 과정을 나만의 과정으로 해석하여 Python 프로그�
 - 엘리베이터 내에서 층을 입력했을 때의 상황에 대해서 로직 추가가 필요함
 
 <br />
+
+[240803]
+- 불필요한 파일 제거 (초기에 python build test 했던 파일들)
+- test script 구현을 위해 main.py 코드 추가
+- test script 구현 (test.sh)
+- 엘리베이터 버튼을 누르는 동작을 구현하는 trigger.py에서 예외 처리 (invalid argument)
+
+<br />
 <br />
 
 ---
