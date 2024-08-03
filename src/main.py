@@ -2,6 +2,8 @@ import multiprocessing
 import time
 import signal
 import sys
+import setproctitle
+
 
 # 종료 플래그
 running = True
@@ -35,6 +37,7 @@ signal.signal(signal.SIGUSR2, signal_handler2)  # 사용자 정의 신호를 처
 def child_target(shared_value):
     global running, g_up, g_down
     child_floor = shared_value[0]
+    setproctitle.setproctitle("floor_" + str(child_floor))
     
     def up_trigger():
         if g_up:
@@ -76,6 +79,7 @@ if __name__ == "__main__":
     current_floor = 1
     direction = 0  # 1 for up, -1 for down, 0 for stopped
 
+    # 알고리즘 최적화 필요
     while running:
         for shared_value in shared_values:
             if shared_value[1]:
@@ -121,29 +125,29 @@ if __name__ == "__main__":
                 direction = 1 if up_list else 0
 
         # 현재 방향이 없는 경우, 가장 가까운 요청 처리
-        if direction == 0:
-            if up_list or down_list:
-                if up_list and (not down_list or min(up_list) < current_floor):
-                    next_floor = min(up_list, default=None)
-                    direction = 1
-                elif down_list and (not up_list or max(down_list) > current_floor):
-                    next_floor = max(down_list, default=None)
-                    direction = -1
-                if next_floor is not None:
-                    if direction == 1:
-                        up_list.remove(next_floor)
-                        while current_floor < next_floor:
-                            current_floor += 1
-                            print(f"Elevator at floor {current_floor} (going up)")
-                            time.sleep(1)
-                        print(f"Elevator stopped at floor {current_floor}")
-                    elif direction == -1:
-                        down_list.remove(next_floor)
-                        while current_floor > next_floor:
-                            current_floor -= 1
-                            print(f"Elevator at floor {current_floor} (going down)")
-                            time.sleep(1)
-                        print(f"Elevator stopped at floor {current_floor}")
+
+        if up_list or down_list:
+            if up_list and (not down_list or min(up_list) < current_floor):
+                next_floor = min(up_list, default=None)
+                direction = 1
+            elif down_list and (not up_list or max(down_list) > current_floor):
+                next_floor = max(down_list, default=None)
+                direction = -1
+            if next_floor is not None:
+                if direction == 1:
+                    up_list.remove(next_floor)
+                    while current_floor < next_floor:
+                        current_floor += 1
+                        print(f"Elevator at floor {current_floor} (going up)")
+                        time.sleep(1)
+                    print(f"Elevator stopped at floor {current_floor}")
+                elif direction == -1:
+                    down_list.remove(next_floor)
+                    while current_floor > next_floor:
+                        current_floor -= 1
+                        print(f"Elevator at floor {current_floor} (going down)")
+                        time.sleep(1)
+                    print(f"Elevator stopped at floor {current_floor}")
 
         time.sleep(1)
 

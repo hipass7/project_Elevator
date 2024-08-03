@@ -10,5 +10,7 @@ if __name__ == "__main__":
     # 자식 프로세스에 사용자 정의 신호 보내기
     if int(direction) == 1:
         os.kill(int(pid), signal.SIGUSR1)
-    else:
+    elif int(direction) == -1:
         os.kill(int(pid), signal.SIGUSR2)
+    else:
+        print("Invalid argument")
