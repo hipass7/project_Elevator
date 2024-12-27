@@ -4,15 +4,17 @@ import time
 ev_list = []
 waiting_queue = deque([])
 class Elevator:
-    def __init__(self):
+    def __init__(self, number):
         self.now = 1 # int
         self.dest = Request(1, 1) # class Floor
         self.direction = 0 # down : -1, stop : 0, up : 1
+        self.number = number
         
     def run(self):
         if self.dest.floor == self.now:
-            self.direction = 0
-            print("ARRIVED")
+            if self.direction != 0:
+                print("ARRIVED")
+                self.direction = 0
             
         if self.direction != 0:
             select = False
@@ -44,7 +46,9 @@ class Request:
         waiting_queue.append(self)
 
 if __name__ == "__main__":
-    ev1 = Elevator()
+    ev1, ev2 = Elevator(1), Elevator(2)
+    ev_list.append(ev1)
+    ev_list.append(ev2)
     
     req1 = Request(9, -1)
     req1.call_ev()
@@ -52,9 +56,16 @@ if __name__ == "__main__":
     req2 = Request(4, -1)
     req2.call_ev()
     
+    req3 = Request(15, 1)
+    req3.call_ev()
+    
+    req4 = Request(8, 1)
+    req4.call_ev()
+    
     while True:
-        print("dest :", ev1.dest.floor, "now :", ev1.now, "direction :", ev1.direction)
-        ev1.run()
+        for i in ev_list:
+            print(i.number, ">> dest :", i.dest.floor, "now :", i.now, "direction :", i.direction)
+            i.run()
         time.sleep(1)
     
     
