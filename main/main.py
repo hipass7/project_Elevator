@@ -11,35 +11,53 @@ class Elevator:
         self.direction = 0 # down : -1, stop : 0, up : 1
         self.number = number
         self.internal_req = deque([])
+        self.open_door = False
+        self.open_time = 0
+        
+    def internal_call(self, req):
+        self.internal_req.append(req)
+        
+    def stop(self):
+        if self.open_door:
+            if time.time() - self.open_time > 5:
+                self.open_door = False
+        else:
+            self.open_door = True
+            self.open_time = time.time()
         
     def run(self):
-        if self.dest.floor == self.now:
-            if self.direction != 0:
-                print("ARRIVED")
-                self.direction = 0 # to do : internal_req feature -> self.dest.direction
-            
-        if self.direction != 0:
-            select = False
-            for i in waiting_queue:
-                if (self.now + self.direction == i.floor) and (self.direction == i.direction):
-                    waiting_queue.appendleft(self.dest)
-                    select = True
-                    break
-            if select:
-                self.dest = i
-                waiting_queue.remove(i)
-                    
-        else:
-            if waiting_queue:
-                self.dest = waiting_queue.popleft()
-                if self.dest.floor > self.now:
-                    self.direction = 1
-                else:
-                    self.direction = -1
-            else:
-                self.direction = 0
+        if not self.open_door:
+            if self.dest.floor == self.now:
+                if self.direction != 0:
+                    print("ARRIVED")
+                    self.stop()
+                    self.direction = 0 # to do : internal_req feature -> self.dest.direction
+                    return
                 
-        self.now += self.direction
+            if self.direction != 0:
+                select = False
+                for i in waiting_queue:
+                    if (self.now + self.direction == i.floor) and (self.direction == i.direction):
+                        waiting_queue.appendleft(self.dest)
+                        select = True
+                        break
+                if select:
+                    self.dest = i
+                    waiting_queue.remove(i)
+                        
+            else:
+                if waiting_queue:
+                    self.dest = waiting_queue.popleft()
+                    if self.dest.floor > self.now:
+                        self.direction = 1
+                    else:
+                        self.direction = -1
+                else:
+                    self.direction = 0
+                    
+            self.now += self.direction
+        else:
+            self.stop()
         
     def update(self):
         select = False
@@ -100,6 +118,7 @@ if __name__ == "__main__":
             i.run()
             if new_req:
                 i.update()
+            
         if new_req:
             new_req = False
         time.sleep(1)
