@@ -6,8 +6,8 @@ set(CMAKE_CXX_STANDARD 17)
 
 # Add source files
 set(SOURCES
-    src/Elevator.cpp
-    src/Request.cpp
+    src/elevator.cpp
+    src/request.cpp
     src/main.cpp
 )
 
