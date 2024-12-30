@@ -7,10 +7,10 @@ new_req = False
 class Elevator:
     def __init__(self, number):
         self.now = 1 # int
-        self.dest = Request(1, 1) # class Floor
+        self.dest = Request(1, 0) # class Floor
         self.direction = 0 # down : -1, stop : 0, up : 1
         self.number = number
-        self.internal_req = deque([])
+        self.internal_req = deque()
         self.open_door = False
         self.open_time = 0
         
@@ -21,9 +21,11 @@ class Elevator:
         if self.open_door:
             if time.time() - self.open_time > 5:
                 self.open_door = False
+                print(f"Elevator {self.number}: Door closed")
         else:
             self.open_door = True
             self.open_time = time.time()
+            print(f"Elevator {self.number}: Door opened")
         
     def run(self):
         if not self.open_door:
@@ -122,17 +124,3 @@ if __name__ == "__main__":
         if new_req:
             new_req = False
         time.sleep(1)
-    
-    
-    
-# def new_request(req):
-#     req_floor = req.floor
-#     req_direction = req_direction
-
-#     priority_min_list = []
-#     for ev in ev_list:
-#         if ev.direction == 1:
-#             if ev.dest > req_floor > ev.now:
-#                 priority_min_list.append(abs(ev.now - req_floor))
-            
-#     min_index = min_list.index(min(min_list))
