@@ -10,16 +10,13 @@ class Elevator:
         self.dest = Request(1, 0) # class Floor
         self.direction = 0 # down : -1, stop : 0, up : 1
         self.number = number
-        self.internal_req = deque()
+        self.internal_req = internalRequest()
         self.open_door = False
         self.open_time = 0
         
-    def internal_call(self, req):
-        self.internal_req.append(req)
-        
     def stop(self):
         if self.open_door:
-            if time.time() - self.open_time > 5:
+            if ((time.time() - self.open_time > 5) or (self.internal_req.req_close)) and (not self.internal_req.req_open):
                 self.open_door = False
                 print(f"Elevator {self.number}: Door closed")
         else:
@@ -96,6 +93,28 @@ class Request:
         
     def elapsed_time(self):
         return time.time() - self.req_time
+    
+class internalRequest:
+    def __init__(self):
+        self.req_queue = deque([])
+        self.req_open = False
+        self.req_close = False
+        self.emergency = False
+        
+    def internal_call(self, req):
+        self.req_queue.append(req)
+        
+    def open_door_1(self):
+        self.req_open = True
+        
+    def open_door_0(self):
+        self.req_open = False
+        
+    def close_door_1(self):
+        self.req_close = True
+        
+    def close_door_0(self):
+        self.req_close = False
 
 if __name__ == "__main__":
     ev1, ev2 = Elevator(1), Elevator(2)
