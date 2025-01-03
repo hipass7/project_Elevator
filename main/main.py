@@ -25,6 +25,16 @@ class Elevator:
             print(f"Elevator {self.number}: Door opened")
         
     def run(self):
+        # if self.internal_req.req_queue:
+        #     self.internal_req.req_queue.sort()
+        #     for i in self.internal_req.req_queue:
+        #         if (self.now >= i and self.direction == 1) or (self.now <= i and self.direction == -1):
+        #             print("INVALID REQUEST")
+        #         else:
+        #             if self.direction == 1:
+        #                 self.dest = Request(i, self.direction)
+        #             elif self.direction == -1:
+
         if not self.open_door:
             if self.dest.floor == self.now:
                 if self.direction != 0:
