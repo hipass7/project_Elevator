@@ -14,7 +14,7 @@ class Elevator:
         self.open_door = False
         self.open_time = 0
         
-    def stop(self):
+    def stop(self, check = False):
         if self.open_door:
             if ((time.time() - self.open_time > 5) or (self.internal_req.req_close)) and (not self.internal_req.req_open):
                 self.open_door = False
@@ -23,7 +23,8 @@ class Elevator:
             if self.internal_req.req_queue:
                 self.internal_req.req_queue.remove(self.dest)
             else:
-                waiting_queue.remove(self.dest)
+                if not check:
+                    waiting_queue.remove(self.dest)
             self.open_door = True
             self.open_time = time.time()
             print(f"Elevator {self.number}: Door opened")
@@ -36,45 +37,46 @@ class Elevator:
                 break
         if select:
             waiting_queue.remove(i)
-            self.stop()
+            self.stop(True)
             return True
         return False
     
     def internal_check(self):
-        self.internal_req.req_queue.sort()
-        for i in self.internal_req.req_queue:
-            if (self.now >= i and self.direction == 1) or (self.now <= i and self.direction == -1):
-                self.internal_req.req_queue.remove(i)
-                print("INVALID REQUEST")
+        if self.internal_req.req_queue:
+            self.internal_req.req_queue = sorted(self.internal_req.req_queue)
+            for i in self.internal_req.req_queue:
+                if (self.now >= i and self.direction == 1) or (self.now <= i and self.direction == -1):
+                    self.internal_req.req_queue.remove(i)
+                    print("INVALID REQUEST")
 
-        if self.direction == 1:
-            self.dest = self.internal_req.req_queue[0]
-        elif self.direction == -1:
-            self.dest = self.internal_req.req_queue[-1]
+            if self.direction == 1:
+                self.dest = self.internal_req.req_queue[0]
+                self.internal_req.req_queue[0].ev_assign = self
+            elif self.direction == -1:
+                self.dest = self.internal_req.req_queue[-1]
+                self.internal_req.req_queue[-1].ev_assign = self
         
     def run(self):
-        if self.dest is None:
-            return
-        
-        # if self.internal_req.req_queue:
-        #     self.internal_check()
+        self.internal_check()
         
         is_pass = False
         
         if not self.open_door:
-            if self.dest.floor == self.now:
-                if self.direction != 0:
-                    print("ARRIVED")
-                    self.stop()
-                    self.direction = 0 # to do : internal_req feature -> self.dest.direction
-                    return
+            if self.dest is not None:
+                if self.dest.floor == self.now:
+                    if self.direction != 0:
+                        print("ARRIVED")
+                        self.stop()
+                        self.direction = 0 # to do : internal_req feature -> self.dest.direction
+                        return
                 
             if self.direction != 0:
                 is_pass = self.check()
                         
             else:
                 if waiting_queue:
-                    self.dest = waiting_queue.popleft()
+                    self.dest = waiting_queue[0]
+                    waiting_queue[0].ev_assign = self
                     if self.dest.floor > self.now:
                         self.direction = 1
                     else:
@@ -106,8 +108,8 @@ class Elevator:
         else:
             pass
         
-        if select:
-            waiting_queue.remove(i)
+        # if select:
+        #     waiting_queue.remove(i)
 
 class Request:
     def __init__(self, floor, direction, ev_assign = None):
@@ -132,7 +134,8 @@ class internalRequest:
         self.emergency = False
         
     def internal_call(self, req):
-        self.req_queue.append(req)
+        temp = Request(req, 0)
+        self.req_queue.append(temp)
         
     def open_door_1(self):
         self.req_open = True
@@ -165,11 +168,12 @@ if __name__ == "__main__":
     
     while True:
         for i in ev_list:
-            if i.dest is not None:
-                print(i.number, ">> dest :", i.dest.floor, "now :", i.now, "direction :", i.direction)
+            print(i.number, ">> now :", i.now, "direction :", i.direction)
             i.run()
             if new_req:
                 i.update()
+            if i.dest is not None:
+                print(i.number , ">> HEADING :", i.dest.floor)
             
         if new_req:
             new_req = False
