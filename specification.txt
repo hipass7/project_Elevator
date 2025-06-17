@@ -1,0 +1,51 @@
+main
+    Building Control System
+        Scheduler (AI) --> N/A
+        ElevatorManager
+            Elevator
+        FloorPanels
+
+<필요 class>
+1) main
+- BuildingControlSystem
+
+2) BuildingControlSystem
+- Scheduler
+- ElevatorManager
+- FloorPanel
+
+3) ElevatorManager
+- Elevator
+
+4) Elevator
+
+5) FloorPanel
+
+<class 별 구현 method>
+1) BuildingControlSystem
+- initialize
+- run
+
+2) ElevatorManager
+- initialize
+- run
+
+3) Elevator
+
+4) FloorPanel
+
+
+
+
+
+
+
+
+| 클래스              | 설명                                           |
+| ---------------- | -------------------------------------------- |
+| `BuildingSystem` | 전체 시스템을 초기화하고 run함수로 메인 루프를 돌림               |
+| `Elevator`       | 엘리베이터 한 대의 상태, 이동 처리, 문 열기/닫기, 현재 층 등 상태 유지  |
+| `Scheduler`      | 버튼 입력 처리, 요청 큐 관리, AI 판단기에게 어떤 엘리베이터를 보낼지 요청 |
+| `FloorPanel`     | 각 층의 호출 버튼 처리 (상/하 방향)                       |
+| `Request`        | 사용자 요청의 구조체: 층, 방향, 타입(내부/외부 요청 등)           |
+| `AIInterface`    | AI 판단기와 연동하는 인터페이스 (Mock 함수로 대체 가능)          |
