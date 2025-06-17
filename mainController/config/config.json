@@ -1,0 +1,22 @@
+{
+    "num_floors": 20,
+    "num_elevators": 3,
+    "elevators": [
+      {
+        "id": 0,
+        "door_open_duration_sec": 5,
+        "disabled_buttons": [2, 5]
+      },
+      {
+        "id": 1,
+        "door_open_duration_sec": 5,
+        "disabled_buttons": []
+      },
+      {
+        "id": 2,
+        "door_open_duration_sec": 5,
+        "disabled_buttons": [13]
+      }
+    ]
+  }
+  

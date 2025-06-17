@@ -1,0 +1,12 @@
+{
+  "can_interface": "vcan0",
+  "floor": 5,
+  "can_tx_id": 273,
+  "can_rx_id": 1027,
+  "gpio_up_button": 17,
+  "gpio_down_button": 27,
+  "gpio_floor_led": 22,
+  "gpio_dir_led_up": 23,
+  "gpio_dir_led_down": 24
+}
+
