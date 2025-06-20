@@ -3,13 +3,14 @@
 #include <vector>
 #include <memory>
 #include "elevatorManager.h"
+#include "manifest.h"
 class Scheduler; // #include "scheduler.h"
 class FloorPanel; // #include "floorPanel.h"
 
 class BuildingSystem {
 public:
     // 기본 생성자
-    BuildingSystem();
+    BuildingSystem(std::string config);
 
     // 소멸자
     ~BuildingSystem();
@@ -25,6 +26,7 @@ public:
     //Scheduler& getScheduler();
 
 private:
+    ManifestLoader m;
     ElevatorManager em;
     // std::vector<std::shared_ptr<FloorPanel>> floorPanels;
     // Scheduler scheduler;

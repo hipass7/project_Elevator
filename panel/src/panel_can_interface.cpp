@@ -3,16 +3,53 @@
 
 PanelCANInterface::PanelCANInterface(const PanelConfig& config)
     : tx_id(config.can_tx_id), rx_id(config.can_rx_id), socket_fd(-1) {
-    // SocketCAN 초기화는 여기서 구현 가능
-    std::cout << "[CAN] Init CAN interface with tx_id=" << tx_id << ", rx_id=" << rx_id << "\n";
+#if 0
+    struct ifreq ifr;
+    struct sockaddr_can addr;
+
+    socket_fd = socket(PF_CAN, SOCK_RAW, CAN_RAW);
+    if (socket_fd < 0) {
+        perror("socket");
+        return;
+    }
+
+    std::strcpy(ifr.ifr_name, "vcan0");
+    ioctl(socket_fd, SIOCGIFINDEX, &ifr);
+
+    addr.can_family = AF_CAN;
+    addr.can_ifindex = ifr.ifr_ifindex;
+
+    if (bind(socket_fd, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
+        perror("bind");
+        return;
+    }
+#endif
+    std::cout << "[CAN] Bound to vcan0, tx_id=" << tx_id << ", rx_id=" << rx_id << "\n";
 }
 
 void PanelCANInterface::sendButtonPress(bool up) {
-    std::cout << "[CAN] Send " << (up ? "UP" : "DOWN") << " button press via CAN tx_id=" << tx_id << "\n";
-    // 실제로는 CAN 프레임 구성해서 socket_fd로 전송
+#if 0
+    struct can_frame frame;
+    frame.can_id = tx_id;
+    frame.can_dlc = 1;
+    frame.data[0] = up ? 1 : 0;
+
+    int nbytes = write(socket_fd, &frame, sizeof(struct can_frame));
+    if (nbytes < 0) {
+        perror("write");
+    } else {
+        std::cout << "[CAN] Sent button press: " << (up ? "UP" : "DOWN") << "\n";
+    }
+#endif
 }
 
 void PanelCANInterface::receiveElevatorStatus() {
-    std::cout << "[CAN] Waiting for elevator status on rx_id=" << rx_id << "\n";
-    // 실제로는 socket_fd에서 CAN 수신 로직
+#if 0
+    struct can_frame frame;
+    int nbytes = read(socket_fd, &frame, sizeof(struct can_frame));
+    if (nbytes > 0 && frame.can_id == rx_id) {
+        std::cout << "[CAN] Received elevator status from id=" << rx_id
+                  << " floor=" << static_cast<int>(frame.data[0]) << "\n";
+    }
+#endif
 }

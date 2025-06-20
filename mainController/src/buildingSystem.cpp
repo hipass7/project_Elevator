@@ -1,5 +1,4 @@
 #include "buildingSystem.h"
-#include "manifest.h"
 //#include "elevator.h"
 //#include "scheduler.h"
 //#include "floorPanel.h"
@@ -7,8 +6,9 @@
 #include <iostream>
 
 // 생성자
-BuildingSystem::BuildingSystem() {
+BuildingSystem::BuildingSystem(std::string config) {
     std::cout << "[BuildingSystem] Constructor called." << std::endl;
+    m.loadFromFile(config);
     // 필요한 초기화가 있다면 여기에 작성
 }
 
@@ -22,7 +22,6 @@ void BuildingSystem::initialize() {
     std::cout << "[BuildingSystem] Initialization started." << std::endl;
 
     ManifestLoader m;
-    std::cout << m.buildingConf.numFloors << std::endl;
 
     // 파일을 불러옴 (ev들의 정보가 있는 json 파일 (list임))
     em.initialize();

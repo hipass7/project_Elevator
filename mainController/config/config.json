@@ -1,22 +1,31 @@
 {
-    "num_floors": 20,
-    "num_elevators": 3,
-    "elevators": [
-      {
-        "id": 0,
-        "door_open_duration_sec": 5,
-        "disabled_buttons": [2, 5]
-      },
-      {
-        "id": 1,
-        "door_open_duration_sec": 5,
-        "disabled_buttons": []
-      },
-      {
-        "id": 2,
-        "door_open_duration_sec": 5,
-        "disabled_buttons": [13]
-      }
-    ]
-  }
-  
+  "num_floors": 20,
+  "num_elevators": 3,
+  "can_rx_id": 500,
+  "can_tx_id_base": 1000,
+  "floor_panel_scan_interval_ms": 100,
+  "building_name": "MainOffice",
+  "elevators": [
+    {
+      "id": 0,
+      "door_open_duration_sec": 5,
+      "disabled_buttons": [2, 5],
+      "can_tx_id": 1100,
+      "can_rx_id": 2100
+    },
+    {
+      "id": 1,
+      "door_open_duration_sec": 5,
+      "disabled_buttons": [],
+      "can_tx_id": 1101,
+      "can_rx_id": 2101
+    },
+    {
+      "id": 2,
+      "door_open_duration_sec": 5,
+      "disabled_buttons": [13],
+      "can_tx_id": 1102,
+      "can_rx_id": 2102
+    }
+  ]
+}

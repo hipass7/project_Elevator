@@ -1,5 +1,14 @@
 #pragma once
 #include "panel_config.h"
+#if 0
+#include <linux/can.h>
+#include <linux/can/raw.h>
+#include <sys/socket.h>
+#include <sys/ioctl.h>
+#include <net/if.h>
+#include <unistd.h>
+#include <cstring>
+#endif
 
 class PanelCANInterface {
 public:

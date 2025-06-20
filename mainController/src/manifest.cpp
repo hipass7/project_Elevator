@@ -1,19 +1,14 @@
 #include "manifest.h"
+#include <nlohmann/json.hpp>
 #include <fstream>
 #include <iostream>
-#include <nlohmann/json.hpp>
+#include <stdexcept>
 
 using json = nlohmann::json;
 
-// 생성자
-ManifestLoader::ManifestLoader() {
-    std::cout << "[Elevator] Constructor called." << std::endl;
-    loadFromFile("config/config.json");
-}
+ManifestLoader::ManifestLoader() = default;
 
-// 소멸자
-ManifestLoader::~ManifestLoader() {
-}
+ManifestLoader::~ManifestLoader() = default;
 
 void ManifestLoader::loadFromFile(const std::string& filePath) {
     std::ifstream file(filePath);
@@ -24,14 +19,27 @@ void ManifestLoader::loadFromFile(const std::string& filePath) {
     json j;
     file >> j;
 
-    buildingConf.numFloors = j["num_floors"];
-    buildingConf.numElevators = j["num_elevators"];
+    config.num_floors = j["num_floors"].get<int>();
+    config.num_elevators = j["num_elevators"].get<int>();
+    config.building_name = j["building_name"].get<std::string>();
+    config.can_rx_id = j["can_rx_id"].get<int>();
+    config.can_tx_id_base = j["can_tx_id_base"].get<int>();
+    config.floor_panel_scan_interval_ms = j["floor_panel_scan_interval_ms"].get<int>();
 
+    config.elevators.clear();
     for (const auto& elev : j["elevators"]) {
         ElevatorConfig e;
-        elevatorConf.id = elev["id"];
-        elevatorConf.disabledButtons = elev["disabled_buttons"].get<std::vector<int>>();
-        elevatorConf.doorOpenDurationSec = elev["door_open_duration_sec"];
-        buildingConf.elevators.push_back(e);
+        e.id = elev["id"].get<int>();
+        e.door_open_duration_sec = elev["door_open_duration_sec"].get<int>();
+        e.disabled_buttons = elev["disabled_buttons"].get<std::vector<int>>();
+        e.can_tx_id = elev["can_tx_id"].get<int>();
+        e.can_rx_id = elev["can_rx_id"].get<int>();
+        config.elevators.push_back(e);
     }
+
+    std::cout << "[ManifestLoader] Loaded config for building: " << config.building_name << "\n";
+}
+
+const ControllerConfig& ManifestLoader::getConfig() const {
+    return config;
 }
