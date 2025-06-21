@@ -1,16 +1,20 @@
 #pragma once
 
+#include "manifest.h"
+#include <string>
 #include <vector>
-#include <memory>
+#include <iostream>
 
 class Elevator {
 public:
-    // 기본 생성자
-    Elevator();
+    explicit Elevator(const ElevatorConfig& config);
 
-    // 소멸자
-    ~Elevator();
+    void printStatus() const;
 
 private:
-    int elevators;
+    int id;
+    int doorOpenDurationSec;
+    std::vector<int> disabledButtons;
+    int canTxId;
+    int canRxId;
 };

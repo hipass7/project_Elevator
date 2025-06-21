@@ -31,6 +31,7 @@ struct ControllerConfig {
 class ManifestLoader {
 public:
     ManifestLoader();
+    ManifestLoader(const std::string config);
     ~ManifestLoader();
 
     void loadFromFile(const std::string& filePath);

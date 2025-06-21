@@ -7,6 +7,9 @@
 using json = nlohmann::json;
 
 ManifestLoader::ManifestLoader() = default;
+ManifestLoader::ManifestLoader(const std::string config) {
+    loadFromFile(config);
+}
 
 ManifestLoader::~ManifestLoader() = default;
 
