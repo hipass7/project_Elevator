@@ -12,3 +12,14 @@
     receive)
         - 목적지 (vector)
         
+CAN 사용법
+1) #if 0을 1로 변경
+
+2) 아래 명령어 수행
+sudo modprobe vcan
+sudo ip link add dev vcan0 type vcan
+sudo ip link set up vcan0
+
+3) rx_id 1027로 0x01을 보내는 예시
+cansend vcan0 403#01
+
