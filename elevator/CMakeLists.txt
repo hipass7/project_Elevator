@@ -8,15 +8,15 @@ add_executable(elevator_main
     src/main.cpp  # <-- main 함수가 포함된 파일
     src/elevator.cpp
     src/elevator_can_interface.cpp
-    ../mainController/src/manifest.cpp
+    src/elevator_config.cpp
 )
 
 target_include_directories(elevator_main PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/../mainController/include
     ${CMAKE_SOURCE_DIR}/../external
 )
 
+# if windows, deactive
 target_link_libraries(elevator_main
     PRIVATE
         pthread

@@ -1,10 +1,10 @@
 #pragma once
 #include "elevator_can_interface.h"
-#include "manifest.h"
+#include "elevator_config.h"
 
 class Elevator {
 public:
-    explicit Elevator(const ElevatorConfig& config);
+    explicit Elevator(const std::string& config_path);
     void run();
 
 private:

@@ -1,5 +1,5 @@
 #include "elevator.h"
-#include "manifest.h"
+#include "elevator_config.h"
 #include <iostream>
 
 int main(int argc, char* argv[]) {
@@ -8,10 +8,7 @@ int main(int argc, char* argv[]) {
         config_path = argv[1];
     }
 
-    ManifestLoader loader("config_path");
-    const ElevatorConfig& config = loader.getConfig().elevators[0];  // 예: 첫 번째 엘리베이터
-
-    Elevator elevator(config);
+    Elevator elevator(config_path);
     elevator.run();
 
     return 0;

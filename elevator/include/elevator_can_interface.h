@@ -1,6 +1,6 @@
 #pragma once
 
-#include "manifest.h"
+#include "elevator_config.h"
 
 class ElevatorCANInterface {
 public:
@@ -8,7 +8,7 @@ public:
     ~ElevatorCANInterface();
 
     void sendElevatorStatus(int floor);   // 엘리베이터 현재 층 송신
-    bool receiveControlCommand(bool& openDoor);  // 제어 명령 수신 (예: 문 열림 등)
+    bool receiveControlCommand();  // 제어 명령 수신 (예: 문 열림 등)
 
 private:
     bool initSocket(const char* interface_name);
