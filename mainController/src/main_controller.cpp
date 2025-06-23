@@ -8,10 +8,6 @@ MainController::MainController(const ControllerConfig& config)
       canRxId(config.can_rx_id),
       canTxIdBase(config.can_tx_id_base),
       scanIntervalMs(config.floor_panel_scan_interval_ms) {
-    
-    for (const auto& elevConfig : config.elevators) {
-        elevators.push_back(std::make_shared<Elevator>(elevConfig));
-    }
 
     std::cout << "[MainController] Initialized with " << numElevators
               << " elevators for building: " << buildingName << "\n";
@@ -30,9 +26,6 @@ void MainController::initialize() {
     std::cout << "[mainController] Initialization started." << std::endl;
 
     std::cout << "[MainController] System initializing...\n";
-    for (const auto& elevator : elevators) {
-        elevator->printStatus();
-    }
 
     // 파일을 불러옴 (ev들의 정보가 있는 json 파일 (list임))
     //em.initialize();

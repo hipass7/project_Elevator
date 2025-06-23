@@ -23,3 +23,8 @@ sudo ip link set up vcan0
 3) rx_id 1027로 0x01을 보내는 예시
 cansend vcan0 403#01
 
+
+윈도우에서 빌드할 때
+cmake ..
+cmake --build ./
+Debug 폴더 안에 .exe 생김

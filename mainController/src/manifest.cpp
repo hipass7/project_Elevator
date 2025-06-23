@@ -29,17 +29,6 @@ void ManifestLoader::loadFromFile(const std::string& filePath) {
     config.can_tx_id_base = j["can_tx_id_base"].get<int>();
     config.floor_panel_scan_interval_ms = j["floor_panel_scan_interval_ms"].get<int>();
 
-    config.elevators.clear();
-    for (const auto& elev : j["elevators"]) {
-        ElevatorConfig e;
-        e.id = elev["id"].get<int>();
-        e.door_open_duration_sec = elev["door_open_duration_sec"].get<int>();
-        e.disabled_buttons = elev["disabled_buttons"].get<std::vector<int>>();
-        e.can_tx_id = elev["can_tx_id"].get<int>();
-        e.can_rx_id = elev["can_rx_id"].get<int>();
-        config.elevators.push_back(e);
-    }
-
     std::cout << "[ManifestLoader] Loaded config for building: " << config.building_name << "\n";
 }
 

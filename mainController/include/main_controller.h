@@ -1,7 +1,6 @@
 #pragma once
 
 #include "manifest.h"
-#include "elevator.h"
 #include <vector>
 #include <memory>
 #include <string>
@@ -20,6 +19,4 @@ private:
     int canRxId;
     int canTxIdBase;
     int scanIntervalMs;
-
-    std::vector<std::shared_ptr<Elevator>> elevators;
 };
