@@ -1,6 +1,7 @@
 #pragma once
 
 #include "manifest.h"
+#include "main_controller_can_interface.h"
 #include <vector>
 #include <memory>
 #include <string>
@@ -19,4 +20,6 @@ private:
     int canRxId;
     int canTxIdBase;
     int scanIntervalMs;
+
+    MainControllerCANInterface canInterface;
 };

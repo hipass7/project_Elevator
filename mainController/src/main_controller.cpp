@@ -1,5 +1,7 @@
 #include "main_controller.h"
 #include <iostream>
+#include <thread>
+#include <chrono>
 
 MainController::MainController(const ControllerConfig& config)
     : buildingName(config.building_name),
@@ -7,7 +9,8 @@ MainController::MainController(const ControllerConfig& config)
       numElevators(config.num_elevators),
       canRxId(config.can_rx_id),
       canTxIdBase(config.can_tx_id_base),
-      scanIntervalMs(config.floor_panel_scan_interval_ms) {
+      scanIntervalMs(config.floor_panel_scan_interval_ms),
+      canInterface(config) {
 
     std::cout << "[MainController] Initialized with " << numElevators
               << " elevators for building: " << buildingName << "\n";
@@ -37,15 +40,10 @@ void MainController::initialize() {
 void MainController::run() {
     std::cout << "[mainController] System running..." << std::endl;
 
-    // 예시로 단순 루프를 사용
-    // for (int tick = 0; tick < 10; ++tick) {
-    //     std::cout << "Tick " << tick << std::endl;
-
-    //     scheduler.step();  // 스케줄러에 명령 전달
-    //     for (auto& elevator : elevators) {
-    //         elevator->step();  // 각 엘리베이터 한 번 동작
-    //     }
-    // }
+    while (true) {
+        canInterface.receiveButtonPress();
+        std::this_thread::sleep_for(std::chrono::milliseconds(scanIntervalMs));
+    }
 
     std::cout << "[mainController] System stopped." << std::endl;
 }
