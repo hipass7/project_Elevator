@@ -8,6 +8,8 @@ file(GLOB SOURCES "src/*.cpp")
 
 add_executable(panel_main ${SOURCES})
 
+add_definitions(-DKEYBOARD_SIMULATION)
+
 # SocketCAN 라이브러리 연결
 #target_link_libraries(panel_main socketcan)
 

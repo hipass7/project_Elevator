@@ -1,7 +1,7 @@
 #include "main_controller_can_interface.h"
 #include <iostream>
 #include <cstring>
-#if 0
+#if defined(__linux__)
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <net/if.h>
@@ -13,7 +13,7 @@
 MainControllerCANInterface::MainControllerCANInterface(const ControllerConfig& config)
     : tx_id_base(config.can_tx_id_base), rx_id(config.can_rx_id), socket_fd(-1)
 {
-#if 0
+#if defined(__linux__)
     if (!initSocket("can0")) {  // 예: can0 인터페이스 사용
         std::cerr << "Failed to initialize CAN socket\n";
     }
@@ -22,7 +22,7 @@ MainControllerCANInterface::MainControllerCANInterface(const ControllerConfig& c
 
 bool MainControllerCANInterface::initSocket(const char* interface_name)
 {
-#if 0
+#if defined(__linux__)
     socket_fd = socket(PF_CAN, SOCK_RAW, CAN_RAW);
     if (socket_fd < 0) {
         perror("socket");
@@ -47,13 +47,13 @@ bool MainControllerCANInterface::initSocket(const char* interface_name)
         return false;
     }
 #endif
-    std::cout << "[CAN] Initialized socket on interface " << interface_name << "\n";
+    std::cout << "[MAIN] Initialized socket on interface " << interface_name << "\n";
     return true;
 }
 
 void MainControllerCANInterface::sendElevatorStatus(int elevator_id, int floor)
 {
-#if 0
+#if defined(__linux__)
     struct can_frame frame {};
     frame.can_id = tx_id_base + elevator_id;  // 엘리베이터 별로 ID 분리
     frame.can_dlc = 1;
@@ -63,19 +63,19 @@ void MainControllerCANInterface::sendElevatorStatus(int elevator_id, int floor)
     if (nbytes < 0) {
         perror("write");
     } else {
-        std::cout << "[CAN] Sent elevator " << elevator_id << " floor status: " << floor << "\n";
+        std::cout << "[MAIN] Sent elevator " << elevator_id << " floor status: " << floor << "\n";
     }
 #endif
 }
 
 void MainControllerCANInterface::receiveButtonPress()
 {
-#if 0
+#if defined(__linux__)
     struct can_frame frame;
     int nbytes = read(socket_fd, &frame, sizeof(frame));
     if (nbytes > 0 && frame.can_id == rx_id) {
         bool up = frame.data[0] != 0;
-        std::cout << "[CAN] Received button press: " << (up ? "UP" : "DOWN") << "\n";
+        std::cout << "[MAIN] Received button press: " << (up ? "UP" : "DOWN") << "\n";
         // 여기서 이벤트 처리 (스케줄러 호출 등)
     } else if (nbytes < 0) {
         perror("read");

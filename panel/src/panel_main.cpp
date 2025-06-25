@@ -1,13 +1,22 @@
 #include "panel_main.h"
 #include <chrono>
 #include <thread>
+#include <csignal>
+
+static bool isRunning{true};
+
+static void sigHandler(int32_t signum) {
+    if (signum == SIGTERM) {
+        isRunning = false;
+    }
+}
 
 PanelMain::PanelMain(const std::string& config_path)
     : config(PanelConfig::loadFromFile(config_path)),
       can(config), input(config), output(config) {}
 
 void PanelMain::run() {
-    while (true) {
+    while (isRunning) {
         if (input.isUpPressed()) {
             can.sendButtonPress(true);
         }

@@ -1,7 +1,7 @@
 #include "elevator_can_interface.h"
 #include <iostream>
 #include <cstring>
-#if 0
+#if defined(__linux__)
 #include <unistd.h>
 #include <sys/socket.h>
 #include <net/if.h>
@@ -12,7 +12,7 @@
 
 ElevatorCANInterface::ElevatorCANInterface(const ElevatorConfig& config)
     : tx_id(config.can_tx_id), rx_id(config.can_rx_id), socket_fd(-1) {
-#if 0
+#if defined(__linux__)
     if (!initSocket("vcan0")) {  // or "can0" for real hardware
         std::cerr << "[Elevator CAN] Failed to initialize SocketCAN on vcan0\n";
     } else {
@@ -23,7 +23,7 @@ ElevatorCANInterface::ElevatorCANInterface(const ElevatorConfig& config)
 }
 
 ElevatorCANInterface::~ElevatorCANInterface() {
-#if 0
+#if defined(__linux__)
     if (socket_fd >= 0) {
         close(socket_fd);
     }
@@ -31,7 +31,7 @@ ElevatorCANInterface::~ElevatorCANInterface() {
 }
 
 bool ElevatorCANInterface::initSocket(const char* interface_name) {
-#if 0
+#if defined(__linux__)
     socket_fd = socket(PF_CAN, SOCK_RAW, CAN_RAW);
     if (socket_fd < 0) {
         perror("socket");
@@ -60,7 +60,7 @@ bool ElevatorCANInterface::initSocket(const char* interface_name) {
 }
 
 void ElevatorCANInterface::sendElevatorStatus(int floor) {
-#if 0
+#if defined(__linux__)
     struct can_frame frame {};
     frame.can_id = tx_id;
     frame.can_dlc = 1;
@@ -78,7 +78,7 @@ void ElevatorCANInterface::sendElevatorStatus(int floor) {
 
 bool ElevatorCANInterface::receiveControlCommand() {
     auto openDoor = true;
-#if 0
+#if defined(__linux__)
     struct can_frame frame;
     int nbytes = read(socket_fd, &frame, sizeof(frame));
     if (nbytes < 0) {

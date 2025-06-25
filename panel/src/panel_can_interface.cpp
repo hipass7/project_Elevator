@@ -3,7 +3,7 @@
 
 PanelCANInterface::PanelCANInterface(const PanelConfig& config)
     : tx_id(config.can_tx_id), rx_id(config.can_rx_id), socket_fd(-1) {
-#if 0
+#if defined(__linux__)
     struct ifreq ifr;
     struct sockaddr_can addr;
 
@@ -24,11 +24,11 @@ PanelCANInterface::PanelCANInterface(const PanelConfig& config)
         return;
     }
 #endif
-    std::cout << "[CAN] Bound to vcan0, tx_id=" << tx_id << ", rx_id=" << rx_id << "\n";
+    std::cout << "[PANEL] Bound to vcan0, tx_id=" << tx_id << ", rx_id=" << rx_id << "\n";
 }
 
 void PanelCANInterface::sendButtonPress(bool up) {
-#if 0
+#if defined(__linux__)
     struct can_frame frame;
     frame.can_id = tx_id;
     frame.can_dlc = 1;
@@ -38,17 +38,17 @@ void PanelCANInterface::sendButtonPress(bool up) {
     if (nbytes < 0) {
         perror("write");
     } else {
-        std::cout << "[CAN] Sent button press: " << (up ? "UP" : "DOWN") << "\n";
+        std::cout << "[PANEL] Sent button press: " << (up ? "UP" : "DOWN") << "\n";
     }
 #endif
 }
 
 void PanelCANInterface::receiveElevatorStatus() {
-#if 0
+#if defined(__linux__)
     struct can_frame frame;
     int nbytes = read(socket_fd, &frame, sizeof(struct can_frame));
     if (nbytes > 0 && frame.can_id == rx_id) {
-        std::cout << "[CAN] Received elevator status from id=" << rx_id
+        std::cout << "[PANEL] Received elevator status from id=" << rx_id
                   << " floor=" << static_cast<int>(frame.data[0]) << "\n";
     }
 #endif

@@ -10,5 +10,9 @@ public:
 private:
     int gpio_up;
     int gpio_down;
+
+#if defined(KEYBOARD_SIMULATION)
+    char getNonBlockingChar();
+#endif
 };
 

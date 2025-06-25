@@ -1,6 +1,6 @@
 #pragma once
 #include "panel_config.h"
-#if 0
+#if defined(__linux__)
 #include <linux/can.h>
 #include <linux/can/raw.h>
 #include <sys/socket.h>
