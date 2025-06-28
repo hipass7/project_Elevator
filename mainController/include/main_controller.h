@@ -5,6 +5,7 @@
 #include <vector>
 #include <memory>
 #include <string>
+#include <map>
 
 class MainController {
 public:
@@ -22,4 +23,6 @@ private:
     int scanIntervalMs;
 
     MainControllerCANInterface canInterface;
+    std::map<int, std::vector<int>> evMap{};
+    std::vector<int> panelList{};
 };

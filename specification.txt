@@ -28,3 +28,21 @@ cansend vcan0 403#01
 cmake ..
 cmake --build ./
 Debug 폴더 안에 .exe 생김
+
+받을 수 있는 요청
+1) ev 내 층수버튼
+2) 각 층 panel의 위/아래 버튼
+
+
+스케줄러 in / out 방식
+
+input
+1) 내부 호출이라면 (현재 상황, 내부호출여부, ev_id, 층수)
+2) 외부 호출이라면 (현재 상황, 내부호출여부, 층수, 방향)
+현재 상황 = request_list ([2, 3, 5], [7, 4, 2])
+
+엘리베이터 초기화
+1) 엘리베이터가 켜지면 CAN 통신을 통해 엘리베이터 정보를 mainController에게 전달
+ex. data[0] = 0xFF (초기화임을 알림)
+    data[1] = 0x01 (ev id)
+2) 그러면 mainController가 이 신호를 받아 해당 id로 map을 통해 ev id와 request_list로 ev_map을 관리

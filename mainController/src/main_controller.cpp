@@ -30,8 +30,34 @@ void MainController::initialize() {
 
     std::cout << "[MainController] System initializing...\n";
 
-    // 파일을 불러옴 (ev들의 정보가 있는 json 파일 (list임))
-    //em.initialize();
+    // tx_id로 CAN 통신 통해서 연결된 Elevator들에게 초기화 요청을 보냄
+    // ex. data[0] = 0xFF
+    // Elevator들은 위 신호를 받으면 0xFF 0x01(id) 라는 식으로 return을 보냄
+    // 그 데이터를 여기서 받아서 evMap에 추가
+
+    // 엘리베이터 초기화 (evMap)
+    canInterface.sendEvInitialize();
+    for (int i = 0; i < numElevators; i++)
+    {
+        int evId = canInterface.receiveEvInitialize();
+        if (evId == -1)
+        {
+            std::cout << "Invalid elevator id" << std::endl; // 오류 출력, 재부팅 로직 타야함
+        }
+        evMap[evId] = std::vector<int>{};
+    }
+
+    // panel 초기화 (panelList)
+    canInterface.sendPanelInitialize();
+    for (int i = 0; i < numFloors; i++)
+    {
+        int panelId = canInterface.receivePanelInitialize();
+        panelList.emplace_back(panelId);
+    }
+    if (panelList.size() != numFloors)
+    {
+        std::cout << "Invalid panel id" << std::endl; // 오류 출력, 재부팅 로직 타야함
+    }
 
     std::cout << "[mainController] Initialization completed." << std::endl;
 }

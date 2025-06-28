@@ -12,6 +12,14 @@ public:
     // 버튼 누름 이벤트 수신 (floor panel에서 보냄)
     void receiveButtonPress();
 
+    void sendEvInitialize();
+
+    int receiveEvInitialize();
+
+    void sendPanelInitialize();
+
+    int receivePanelInitialize();
+
 private:
     int socket_fd;
     int tx_id_base;  // 엘리베이터 상태 송신용 CAN ID 베이스 (elevator_id별 offset 사용 가능)
