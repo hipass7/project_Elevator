@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Elevator Web Controller</title>
+  <style>
+    body { font-family: sans-serif; display: flex; gap: 50px; margin: 20px; }
+    .panel { border: 1px solid gray; padding: 20px; border-radius: 10px; }
+    .btn { display: block; margin: 5px; padding: 10px 20px; font-size: 16px; }
+  </style>
+</head>
+<body>
+  <div class="panel">
+    <h3>🚪 외부 호출 패널</h3>
+    <div id="external-panel"></div>
+  </div>
+
+  <div class="panel">
+    <h3>🛗 내부 조작 패널</h3>
+    <div id="internal-panel"></div>
+    <button class="btn" onclick="sendDoorCommand(1)">열림</button>
+    <button class="btn" onclick="sendDoorCommand(2)">닫힘</button>
+  </div>
+
+  <script>
+    const socket = new WebSocket("ws://localhost:3000");
+
+    function sendCANMessage(id, data) {
+      socket.send(JSON.stringify({ id, data }));
+    }
+
+    function sendExternalCall(floor, direction) {
+      sendCANMessage(0x101, [floor, direction]);
+    }
+
+    function sendInternalSelect(floor) {
+      sendCANMessage(0x102, [floor]);
+    }
+
+    function sendDoorCommand(cmd) {
+      sendCANMessage(0x103, [cmd]);
+    }
+
+    // 버튼 생성
+    const floors = [1, 2, 3, 4, 5];
+
+    for (let f of floors) {
+      const upBtn = document.createElement("button");
+      upBtn.className = "btn";
+      upBtn.innerText = `${f}층 ▲`;
+      upBtn.onclick = () => sendExternalCall(f, 1);
+
+      const downBtn = document.createElement("button");
+      downBtn.className = "btn";
+      downBtn.innerText = `${f}층 ▼`;
+      downBtn.onclick = () => sendExternalCall(f, 2);
+
+      const panel = document.getElementById("external-panel");
+      if (f < 5) panel.appendChild(upBtn);
+      if (f > 1) panel.appendChild(downBtn);
+    }
+
+    for (let f of floors) {
+      const floorBtn = document.createElement("button");
+      floorBtn.className = "btn";
+      floorBtn.innerText = `${f}층`;
+      floorBtn.onclick = () => sendInternalSelect(f);
+      document.getElementById("internal-panel").appendChild(floorBtn);
+    }
+  </script>
+</body>
+</html>
