@@ -46,3 +46,27 @@ input
 ex. data[0] = 0xFF (초기화임을 알림)
     data[1] = 0x01 (ev id)
 2) 그러면 mainController가 이 신호를 받아 해당 id로 map을 통해 ev id와 request_list로 ev_map을 관리
+
+
+[전원 On]
+    ↓
+[각 보드 (Elevator/Panel/MainController) 자동 부팅]
+    ↓
+[각 보드에서 자기 역할 감지 및 초기화 (CAN 수신 or Config File)]
+    ↓
+[MainController가 전체 상태 확인 후 운영 시작]
+
+
+1개의 main controller 보드
+2개의 elevator 보드
+3개의 panel 보드가 있다고 가정
+
+보드에 전원은 건물의 전원 ON에 따라 들어오는 구조.
+보드에 전원이 들어오는 순간 모든 binary는 자동 실행 (init.d)
+하지만 initialize 대기 단계에서 initialize 신호를 계속 기다리기
+
+
+<web 실행하기>
+npm install
+node can-web.js
+http://localhost:3000
