@@ -87,7 +87,7 @@ void MainControllerCANInterface::receiveButtonPress()
     if (ret > 0 && FD_ISSET(socket_fd, &read_fds)) {
         int nbytes = read(socket_fd, &frame, sizeof(frame));
         if (nbytes > 0 && frame.can_id == rx_id) {
-            bool up = frame.data[0] != 0;
+            bool up = frame.data[1] != 0;
             std::cout << "[MAIN] Received button press: " << (up ? "UP" : "DOWN") << "\n";
         }
     } else if (ret == 0) {

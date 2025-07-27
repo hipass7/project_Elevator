@@ -1,7 +1,7 @@
 {
   "num_floors": 20,
   "num_elevators": 3,
-  "can_rx_id": 273,
+  "can_rx_id": 1024,
   "can_tx_id_base": 1000,
   "floor_panel_scan_interval_ms": 100,
   "building_name": "MainOffice"

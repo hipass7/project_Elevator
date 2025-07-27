@@ -1,0 +1,14 @@
+{
+  "name": "elevator-web-control",
+  "version": "1.0.0",
+  "description": "Web-based Elevator Controller with WebSocket and socketCAN",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socketcan": "^2.9.2",
+    "ws": "^8.13.0"
+  }
+}

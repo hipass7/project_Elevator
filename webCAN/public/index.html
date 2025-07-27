@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Elevator Web Controller</title>
+  <style>
+    body { font-family: sans-serif; display: flex; gap: 50px; margin: 20px; }
+    .panel { border: 1px solid gray; padding: 20px; border-radius: 10px; }
+    .btn { display: block; margin: 5px; padding: 10px 20px; font-size: 16px; }
+  </style>
+</head>
+<body>
+  <div class="panel">
+    <h3>🚪 외부 호출 패널</h3>
+    <div id="external-panel"></div>
+  </div>
+
+  <div class="panel">
+    <h3>🛗 내부 조작 패널</h3>
+    <div id="internal-panel"></div>
+    <button class="btn" onclick="sendDoorCommand(1)">열림</button>
+    <button class="btn" onclick="sendDoorCommand(2)">닫힘</button>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
