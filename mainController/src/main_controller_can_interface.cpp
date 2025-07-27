@@ -185,3 +185,20 @@ int MainControllerCANInterface::receivePanelInitialize() {
 #endif
     return -1;
 }
+
+void MainControllerCANInterface::sendCANMessage(int p1, int p2)
+{
+#if defined(__linux__)
+    struct can_frame frame {};
+    frame.can_id = 0x200 + p1;
+    frame.can_dlc = 1;
+    frame.data[0] = static_cast<uint8_t>(p2);
+
+    int nbytes = write(socket_fd, &frame, sizeof(frame));
+    if (nbytes < 0) {
+        perror("write");
+    } else {
+        std::cout << "[MAIN] Sent CAN message with ID 0x" << std::hex << frame.can_id << " and data " << std::dec << p2 << "\n";
+    }
+#endif
+}

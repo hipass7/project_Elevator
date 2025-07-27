@@ -20,6 +20,8 @@ public:
 
     int receivePanelInitialize();
 
+    void sendCANMessage(int p1, int p2);
+
 private:
     int socket_fd;
     int tx_id_base;  // 엘리베이터 상태 송신용 CAN ID 베이스 (elevator_id별 offset 사용 가능)
