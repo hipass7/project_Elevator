@@ -2,6 +2,6 @@
     "id": 0,
     "door_open_duration_sec": 5,
     "disabled_buttons": [2, 5],
-    "can_tx_id": 272,
-    "can_rx_id": 528
+    "can_tx_id": "0x000",
+    "can_rx_id": "0x000"
 }
