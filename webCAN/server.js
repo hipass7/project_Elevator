@@ -1,55 +1,55 @@
 const express = require("express");
 const WebSocket = require("ws");
-const can = require("socketcan");
-const http = require("http");
+const path = require("path");
 
-// Express 서버 설정
 const app = express();
-const server = http.createServer(app);
+const port = 3000;
+
+app.use(express.static(path.join(__dirname, "public")));
+
+const server = app.listen(port, () => {
+  console.log(`🚀 http://localhost:${port}`);
+});
+
 const wss = new WebSocket.Server({ server });
 
-// 정적 파일 서빙 (index.html, script.js 등)
-app.use(express.static("public"));
+let state = [
+  { floor: 1, direction: 0, door: 0 }, // elevator 1
+  { floor: 5, direction: 0, door: 0 }  // elevator 2
+];
 
-// WebSocket 연결 처리
-wss.on("connection", (ws) => {
-  console.log("🔌 Web client connected");
+wss.on("connection", ws => {
+  console.log("📡 클라이언트 연결됨");
 
-  ws.on("message", (message) => {
-    const msg = JSON.parse(message);
-    console.log("📤 Web -> CAN:", msg);
+  ws.on("message", msg => {
+    console.log("수신:", msg.toString());
+  });
+});
 
-    // CAN 메시지 전송
-    const frame = {
-      id: msg.id,
-      ext: false,
-      data: Buffer.from(msg.data)
+// 테스트: 상태 가상 변화 시뮬레이션
+setInterval(() => {
+  for (let i = 0; i < 2; i++) {
+    let e = state[i];
+    e.floor += e.direction;
+
+    if (e.floor >= 5) { e.floor = 5; e.direction = -1; }
+    else if (e.floor <= 1) { e.floor = 1; e.direction = 1; }
+
+    e.door = Math.random() > 0.5 ? 1 : 0;
+
+    const status = {
+      type: "status",
+      elevatorId: i + 1,
+      floor: e.floor,
+      door: e.door,
+      direction: e.direction
     };
-    canChannel.send(frame);
-  });
-});
 
-// socketCAN 설정
-const canChannel = can.createRawChannel("vcan0", true);
-
-canChannel.addListener("onMessage", (msg) => {
-  console.log(`📥 CAN -> Web: ID=0x${msg.id.toString(16)} DATA=[${[...msg.data].join(",")}]`);
-
-  // 클라이언트에게 브로드캐스트
-  wss.clients.forEach((client) => {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(JSON.stringify({
-        id: msg.id,
-        data: [...msg.data]
-      }));
-    }
-  });
-});
-
-canChannel.start();
-
-// 서버 실행
-const PORT = 3000;
-server.listen(PORT, () => {
-  console.log(`🚀 Server listening on http://localhost:${PORT}`);
-});
+    const msg = JSON.stringify(status);
+    wss.clients.forEach(client => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(msg);
+      }
+    });
+  }
+}, 1000);
