@@ -26,12 +26,12 @@ void MainController::printConfigSummary() const {
 void MainController::initialize() {
     std::cout << "[mainController] Initialization started." << std::endl;
 
-    canInterface.sendEvInitialize();
+    //canInterface.sendEvInitialize();
     for (int i = 0; i < numElevators; ++i) {
         int evId = -1;
         int retries = 3;
         while (retries-- > 0 && evId == -1) {
-            evId = canInterface.receiveEvInitialize();
+            //evId = canInterface.receiveEvInitialize();
             if (evId == -1) {
                 std::cerr << "Elevator initialization failed. Retrying..." << std::endl;
                 std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -43,12 +43,12 @@ void MainController::initialize() {
         evMap[evId] = {};
     }
 
-    canInterface.sendPanelInitialize();
+    //canInterface.sendPanelInitialize();
     for (int i = 0; i < numFloors; ++i) {
         int panelId = -1;
         int retries = 3;
         while (retries-- > 0 && panelId == -1) {
-            panelId = canInterface.receivePanelInitialize();
+            //panelId = canInterface.receivePanelInitialize();
             if (panelId == -1) {
                 std::cerr << "Panel initialization failed. Retrying..." << std::endl;
                 std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -68,7 +68,7 @@ void MainController::run() {
     std::cout << "[mainController] System running..." << std::endl;
 
     while (true) {
-        canInterface.receiveButtonPress(); // 이제 이 함수는 논블로킹입니다.
+        canInterface.receiveMessages(); // 이제 이 함수는 논블로킹입니다.
         // 다른 주기적인 작업들을 여기에 추가할 수 있습니다.
         std::this_thread::sleep_for(std::chrono::milliseconds(scanIntervalMs));
     }

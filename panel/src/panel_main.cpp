@@ -43,7 +43,7 @@ void PanelMain::run() {
         }
 #endif
 
-        can.receiveElevatorStatus();
+        can.receiveCommand();
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 }
