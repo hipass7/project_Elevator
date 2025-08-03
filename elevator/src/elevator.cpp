@@ -21,7 +21,7 @@ void Elevator::run() {
         }
 
         // 주기적으로 현재 층 상태 전송
-        can_interface.sendElevatorStatus(current_floor);
+        //can_interface.sendElevatorStatus(current_floor);
 
         // TODO: 여기에 실제 엘리베이터 이동 및 상태 관리 로직 추가
         // (예: 목표 층으로 이동, 문 상태 관리 등)

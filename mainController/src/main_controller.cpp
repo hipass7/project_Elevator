@@ -38,7 +38,7 @@ void MainController::initialize() {
             }
         }
         if (evId == -1) {
-            throw std::runtime_error("Failed to initialize all elevators.");
+            //throw std::runtime_error("Failed to initialize all elevators.");
         }
         evMap[evId] = {};
     }
@@ -55,7 +55,7 @@ void MainController::initialize() {
             }
         }
         if (panelId == -1) {
-            throw std::runtime_error("Failed to initialize all panels.");
+            //throw std::runtime_error("Failed to initialize all panels.");
         }
         panelList.push_back(panelId);
     }
