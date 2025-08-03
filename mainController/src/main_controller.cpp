@@ -7,8 +7,6 @@ MainController::MainController(const ControllerConfig& config)
     : buildingName(config.building_name),
       numFloors(config.num_floors),
       numElevators(config.num_elevators),
-      canRxId(config.can_rx_id),
-      canTxIdBase(config.can_tx_id_base),
       scanIntervalMs(config.floor_panel_scan_interval_ms),
       canInterface(config) {
 
