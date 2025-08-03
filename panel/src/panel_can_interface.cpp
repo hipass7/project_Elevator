@@ -87,9 +87,24 @@ void PanelCANInterface::receiveElevatorStatus() {
 
     int ret = select(socket_fd + 1, &read_fds, nullptr, nullptr, &timeout);
     if (ret > 0 && FD_ISSET(socket_fd, &read_fds)) {
-        if (read(socket_fd, &frame, sizeof(frame)) > 0 && frame.can_id == (0x000 + elevator_id)) {
-            std::cout << "[PANEL] Received elevator status from id=" << (0x000 + elevator_id)
-                      << " floor=" << static_cast<int>(frame.data[0]) << "\n";
+        if (read(socket_fd, &frame, sizeof(frame)) > 0) {
+            if (frame.can_id == 0x100) { // Check for broadcast from main controller
+                if (frame.data[0] == 0xFF) { // Initialization command
+                    std::cout << "[Panel CAN] Received initialization command from controller\n";
+                    // Respond to initialization command
+                    struct can_frame response_frame {};
+                    response_frame.can_id = 0x100 + elevator_id;
+                    response_frame.can_dlc = 2;
+                    response_frame.data[0] = 0xFF;
+                    response_frame.data[1] = static_cast<uint8_t>(floor);
+                    if (write(socket_fd, &response_frame, sizeof(response_frame)) < 0) {
+                        perror("write");
+                    }
+                }
+            } else if (frame.can_id == (0x000 + elevator_id)) {
+                std::cout << "[PANEL] Received elevator status from id=" << (0x000 + elevator_id)
+                          << " floor=" << static_cast<int>(frame.data[0]) << "\n";
+            }
         }
     }
 #endif

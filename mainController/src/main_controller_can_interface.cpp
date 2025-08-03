@@ -134,7 +134,7 @@ int MainControllerCANInterface::receiveEvInitialize() {
 void MainControllerCANInterface::sendPanelInitialize() {
 #if defined(__linux__)
     struct can_frame frame{};
-    frame.can_id = tx_id_base;
+    frame.can_id = 0x100; // Broadcast to all panels
     frame.can_dlc = 1;
     frame.data[0] = 0xFF;
 
@@ -155,18 +155,18 @@ int MainControllerCANInterface::receivePanelInitialize() {
     return -1;
 }
 
-void MainControllerCANInterface::sendCANMessage(int elevator_id, int data)
+void MainControllerCANInterface::sendElevatorCommand(int elevator_id, int command)
 {
 #if defined(__linux__)
     struct can_frame frame {};
     frame.can_id = 0x000 + elevator_id;
     frame.can_dlc = 1;
-    frame.data[0] = static_cast<uint8_t>(data);
+    frame.data[0] = static_cast<uint8_t>(command);
 
     if (write(socket_fd, &frame, sizeof(frame)) < 0) {
         perror("write");
     } else {
-        std::cout << "[MAIN] Sent CAN message to elevator " << elevator_id << " with data " << data << "\n";
+        std::cout << "[MAIN] Sent command " << command << " to elevator " << elevator_id << "\n";
     }
 #endif
 }

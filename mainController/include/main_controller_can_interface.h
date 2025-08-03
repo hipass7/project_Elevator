@@ -20,7 +20,7 @@ public:
 
     int receivePanelInitialize();
 
-    void sendCANMessage(int p1, int p2);
+    void sendElevatorCommand(int elevator_id, int command);
 
 private:
     int socket_fd;
