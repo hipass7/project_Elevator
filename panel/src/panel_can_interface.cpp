@@ -11,7 +11,7 @@
 #endif
 
 PanelCANInterface::PanelCANInterface(const PanelConfig& config)
-    : tx_id(config.can_tx_id), rx_id(config.can_rx_id), can_interface(config.can_interface), socket_fd(-1) {
+    : floor(config.floor), elevator_id(config.elevator_id), can_interface(config.can_interface), socket_fd(-1) {
 #if defined(__linux__)
     if (!initSocket()) {
         std::cerr << "[PANEL CAN] Failed to initialize SocketCAN on " << can_interface << "\n";
@@ -61,14 +61,15 @@ bool PanelCANInterface::initSocket() {
 void PanelCANInterface::sendButtonPress(bool up) {
 #if defined(__linux__)
     struct can_frame frame;
-    frame.can_id = tx_id;
-    frame.can_dlc = 1;
-    frame.data[0] = up ? 1 : 0;
+    frame.can_id = 0x100 + elevator_id;
+    frame.can_dlc = 2;
+    frame.data[0] = static_cast<uint8_t>(floor);
+    frame.data[1] = up ? 0x01 : 0x00;
 
     if (write(socket_fd, &frame, sizeof(struct can_frame)) < 0) {
         perror("write");
     } else {
-        std::cout << "[PANEL] Sent button press: " << (up ? "UP" : "DOWN") << "\n";
+        std::cout << "[PANEL] Sent button press: " << (up ? "UP" : "DOWN") << " from floor " << floor << "\n";
     }
 #endif
 }
@@ -86,8 +87,8 @@ void PanelCANInterface::receiveElevatorStatus() {
 
     int ret = select(socket_fd + 1, &read_fds, nullptr, nullptr, &timeout);
     if (ret > 0 && FD_ISSET(socket_fd, &read_fds)) {
-        if (read(socket_fd, &frame, sizeof(frame)) > 0 && frame.can_id == rx_id) {
-            std::cout << "[PANEL] Received elevator status from id=" << rx_id
+        if (read(socket_fd, &frame, sizeof(frame)) > 0 && frame.can_id == (0x000 + elevator_id)) {
+            std::cout << "[PANEL] Received elevator status from id=" << (0x000 + elevator_id)
                       << " floor=" << static_cast<int>(frame.data[0]) << "\n";
         }
     }

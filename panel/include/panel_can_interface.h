@@ -21,8 +21,8 @@ private:
     bool initSocket();
 
     int socket_fd;
-    int tx_id;
-    int rx_id;
+    int floor;
+    int elevator_id;
     std::string can_interface;
 };
 

@@ -11,7 +11,7 @@
 #endif
 
 ElevatorCANInterface::ElevatorCANInterface(const ElevatorConfig& config)
-    : tx_id(config.can_tx_id), rx_id(config.can_rx_id), can_interface(config.can_interface), socket_fd(-1) {
+    : id(config.id), can_interface(config.can_interface), socket_fd(-1) {
 #if defined(__linux__)
     if (!initSocket()) {
         std::cerr << "[Elevator CAN] Failed to initialize SocketCAN on " << can_interface << "\n";
@@ -62,7 +62,7 @@ bool ElevatorCANInterface::initSocket() {
 void ElevatorCANInterface::sendElevatorStatus(int floor) {
 #if defined(__linux__)
     struct can_frame frame {};
-    frame.can_id = tx_id;
+    frame.can_id = 0x000 + id;
     frame.can_dlc = 1;
     frame.data[0] = static_cast<uint8_t>(floor);
 
@@ -70,7 +70,7 @@ void ElevatorCANInterface::sendElevatorStatus(int floor) {
         perror("write");
     } else {
         std::cout << "[Elevator CAN] Sent current floor: " << floor << " (tx_id=0x"
-                  << std::hex << tx_id << std::dec << ")\n";
+                  << std::hex << (0x000 + id) << std::dec << ")\n";
     }
 #endif
 }
@@ -89,10 +89,10 @@ bool ElevatorCANInterface::receiveControlCommand() {
     int ret = select(socket_fd + 1, &read_fds, nullptr, nullptr, &timeout);
     if (ret > 0 && FD_ISSET(socket_fd, &read_fds)) {
         if (read(socket_fd, &frame, sizeof(frame)) > 0) {
-            if (frame.can_id == rx_id && frame.can_dlc >= 1) {
+            if (frame.can_id == (0x000 + id) && frame.can_dlc >= 1) { // Check for the elevator's specific CAN ID
                 bool openDoor = (frame.data[0] == 1);
                 std::cout << "[Elevator CAN] Received command from controller (rx_id=0x"
-                          << std::hex << rx_id << std::dec << "): " << (openDoor ? "Open Door" : "No Action") << "\n";
+                          << std::hex << (0x000 + id) << std::dec << "): " << (openDoor ? "Open Door" : "No Action") << "\n";
                 return openDoor;
             }
         }

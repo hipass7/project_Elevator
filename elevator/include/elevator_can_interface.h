@@ -14,7 +14,6 @@ private:
     bool initSocket();
 
     int socket_fd;
-    int tx_id;
-    int rx_id;
+    int id;
     std::string can_interface;
 };

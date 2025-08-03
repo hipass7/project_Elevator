@@ -13,9 +13,7 @@
 constexpr int default_timeout_ms = 300;
 
 MainControllerCANInterface::MainControllerCANInterface(const ControllerConfig& config)
-    : tx_id_base(config.can_tx_id_base), 
-      rx_id(config.can_rx_id), 
-      can_interface(config.can_interface), 
+    : can_interface(config.can_interface), 
       socket_fd(-1)
 {
 #if defined(__linux__)
@@ -60,7 +58,7 @@ void MainControllerCANInterface::sendElevatorStatus(int elevator_id, int floor)
 {
 #if defined(__linux__)
     struct can_frame frame {};
-    frame.can_id = tx_id_base + elevator_id;
+    frame.can_id = 0x000 + elevator_id;
     frame.can_dlc = 1;
     frame.data[0] = static_cast<uint8_t>(floor);
 
@@ -100,9 +98,11 @@ void MainControllerCANInterface::receiveButtonPress()
 {
     struct can_frame frame;
     if (receiveFrame(frame, default_timeout_ms)) {
-        if (frame.can_id == rx_id) {
+        if (frame.can_id >= 0x100 && frame.can_id <= 0x1FF) { // Panel CAN ID range
+            int elevator_id = frame.can_id - 0x100;
+            int floor = frame.data[0];
             bool up = frame.data[1] != 0;
-            std::cout << "[MAIN] Received button press: " << (up ? "UP" : "DOWN") << "\n";
+            std::cout << "[MAIN] Received button press from elevator " << elevator_id << " at floor " << floor << ": " << (up ? "UP" : "DOWN") << "\n";
         }
     }
 }
@@ -110,7 +110,7 @@ void MainControllerCANInterface::receiveButtonPress()
 void MainControllerCANInterface::sendEvInitialize() {
 #if defined(__linux__)
     struct can_frame frame{};
-    frame.can_id = tx_id_base;
+    frame.can_id = 0x000; // Broadcast to all elevators
     frame.can_dlc = 1;
     frame.data[0] = 0xFF;
 
@@ -155,18 +155,18 @@ int MainControllerCANInterface::receivePanelInitialize() {
     return -1;
 }
 
-void MainControllerCANInterface::sendCANMessage(int p1, int p2)
+void MainControllerCANInterface::sendCANMessage(int elevator_id, int data)
 {
 #if defined(__linux__)
     struct can_frame frame {};
-    frame.can_id = 0x200 + p1;
+    frame.can_id = 0x000 + elevator_id;
     frame.can_dlc = 1;
-    frame.data[0] = static_cast<uint8_t>(p2);
+    frame.data[0] = static_cast<uint8_t>(data);
 
     if (write(socket_fd, &frame, sizeof(frame)) < 0) {
         perror("write");
     } else {
-        std::cout << "[MAIN] Sent CAN message with ID 0x" << std::hex << frame.can_id << " and data " << std::dec << p2 << "\n";
+        std::cout << "[MAIN] Sent CAN message to elevator " << elevator_id << " with data " << data << "\n";
     }
 #endif
 }
