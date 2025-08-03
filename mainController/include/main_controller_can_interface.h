@@ -26,7 +26,9 @@ private:
     int socket_fd;
     int tx_id_base;  // 엘리베이터 상태 송신용 CAN ID 베이스 (elevator_id별 offset 사용 가능)
     int rx_id;       // 버튼 이벤트 수신용 CAN ID
+    std::string can_interface; // CAN 인터페이스 이름 (예: "vcan0")
 
     // 내부 헬퍼 함수 - 소켓 초기화, 바인딩 등
-    bool initSocket(const char* interface_name);
+    bool initSocket();
+    bool receiveFrame(struct can_frame& frame, int timeout_ms);
 };

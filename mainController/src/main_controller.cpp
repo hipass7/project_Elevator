@@ -28,35 +28,38 @@ void MainController::printConfigSummary() const {
 void MainController::initialize() {
     std::cout << "[mainController] Initialization started." << std::endl;
 
-    std::cout << "[MainController] System initializing...\n";
-
-    // tx_id로 CAN 통신 통해서 연결된 Elevator들에게 초기화 요청을 보냄
-    // ex. data[0] = 0xFF
-    // Elevator들은 위 신호를 받으면 0xFF 0x01(id) 라는 식으로 return을 보냄
-    // 그 데이터를 여기서 받아서 evMap에 추가
-
-    // 엘리베이터 초기화 (evMap)
     canInterface.sendEvInitialize();
-    for (int i = 0; i < numElevators; i++)
-    {
-        int evId = canInterface.receiveEvInitialize();
-        if (evId == -1)
-        {
-            std::cout << "Invalid elevator id" << std::endl; // 오류 출력, 재부팅 로직 타야함
+    for (int i = 0; i < numElevators; ++i) {
+        int evId = -1;
+        int retries = 3;
+        while (retries-- > 0 && evId == -1) {
+            evId = canInterface.receiveEvInitialize();
+            if (evId == -1) {
+                std::cerr << "Elevator initialization failed. Retrying..." << std::endl;
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+            }
         }
-        evMap[evId] = std::vector<int>{};
+        if (evId == -1) {
+            throw std::runtime_error("Failed to initialize all elevators.");
+        }
+        evMap[evId] = {};
     }
 
-    // panel 초기화 (panelList)
     canInterface.sendPanelInitialize();
-    for (int i = 0; i < numFloors; i++)
-    {
-        int panelId = canInterface.receivePanelInitialize();
-        panelList.emplace_back(panelId);
-    }
-    if (panelList.size() != numFloors)
-    {
-        std::cout << "Invalid panel id" << std::endl; // 오류 출력, 재부팅 로직 타야함
+    for (int i = 0; i < numFloors; ++i) {
+        int panelId = -1;
+        int retries = 3;
+        while (retries-- > 0 && panelId == -1) {
+            panelId = canInterface.receivePanelInitialize();
+            if (panelId == -1) {
+                std::cerr << "Panel initialization failed. Retrying..." << std::endl;
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+            }
+        }
+        if (panelId == -1) {
+            throw std::runtime_error("Failed to initialize all panels.");
+        }
+        panelList.push_back(panelId);
     }
 
     std::cout << "[mainController] Initialization completed." << std::endl;
@@ -67,7 +70,8 @@ void MainController::run() {
     std::cout << "[mainController] System running..." << std::endl;
 
     while (true) {
-        canInterface.receiveButtonPress();
+        canInterface.receiveButtonPress(); // 이제 이 함수는 논블로킹입니다.
+        // 다른 주기적인 작업들을 여기에 추가할 수 있습니다.
         std::this_thread::sleep_for(std::chrono::milliseconds(scanIntervalMs));
     }
 

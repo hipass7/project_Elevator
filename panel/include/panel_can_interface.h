@@ -13,12 +13,16 @@
 class PanelCANInterface {
 public:
     explicit PanelCANInterface(const PanelConfig& config);
+    ~PanelCANInterface();
     void sendButtonPress(bool up);
-    void receiveElevatorStatus();  // blocking or non-blocking
+    void receiveElevatorStatus();
 
 private:
+    bool initSocket();
+
     int socket_fd;
     int tx_id;
     int rx_id;
+    std::string can_interface;
 };
 

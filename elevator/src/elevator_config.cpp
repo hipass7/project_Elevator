@@ -13,6 +13,7 @@ ElevatorConfig ElevatorConfig::loadFromFile(const std::string& path) {
         j["door_open_duration_sec"].get<int>(),
         j["disabled_buttons"].get<std::vector<int>>(),
         j["can_tx_id"].get<int>(),
-        j["can_rx_id"].get<int>()
+        j["can_rx_id"].get<int>(),
+        j["can_interface"].get<std::string>()
     };
 }

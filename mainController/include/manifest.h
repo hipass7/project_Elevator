@@ -5,6 +5,7 @@
 struct ControllerConfig {
     int num_floors;
     int num_elevators;
+    std::string can_interface;
 
     // 메인 컨트롤러 CAN ID (예: 버튼 이벤트 수신용 ID)
     int can_rx_id;      // floor panel -> main controller 메시지 수신용

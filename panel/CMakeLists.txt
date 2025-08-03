@@ -4,9 +4,15 @@ project(panel_main)
 set(CMAKE_CXX_STANDARD 17)
 
 include_directories(include ${CMAKE_SOURCE_DIR}/../external)
-file(GLOB SOURCES "src/*.cpp")
 
-add_executable(panel_main ${SOURCES})
+add_executable(panel_main
+    src/main.cpp
+    src/panel_main.cpp
+    src/panel_can_interface.cpp
+    src/panel_config.cpp
+    src/panel_input.cpp
+    src/panel_output.cpp
+)
 
 add_definitions(-DKEYBOARD_SIMULATION)
 

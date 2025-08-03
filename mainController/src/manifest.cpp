@@ -24,6 +24,7 @@ void ManifestLoader::loadFromFile(const std::string& filePath) {
 
     config.num_floors = j["num_floors"].get<int>();
     config.num_elevators = j["num_elevators"].get<int>();
+    config.can_interface = j["can_interface"].get<std::string>();
     config.building_name = j["building_name"].get<std::string>();
     config.can_rx_id = j["can_rx_id"].get<int>();
     config.can_tx_id_base = j["can_tx_id_base"].get<int>();
