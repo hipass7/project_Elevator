@@ -11,10 +11,10 @@
 #endif
 
 ElevatorCANInterface::ElevatorCANInterface(const ElevatorConfig& config)
-    : tx_id(config.can_tx_id), rx_id(config.can_rx_id), socket_fd(-1) {
+    : tx_id(config.can_tx_id), rx_id(config.can_rx_id), can_interface(config.can_interface), socket_fd(-1) {
 #if defined(__linux__)
-    if (!initSocket("vcan0")) {  // or "can0" for real hardware
-        std::cerr << "[Elevator CAN] Failed to initialize SocketCAN on vcan0\n";
+    if (!initSocket()) {
+        std::cerr << "[Elevator CAN] Failed to initialize SocketCAN on " << can_interface << "\n";
     } else {
         std::cout << "[Elevator CAN] Initialized with tx_id=0x" << std::hex << tx_id
                   << " rx_id=0x" << rx_id << std::dec << "\n";
@@ -30,7 +30,7 @@ ElevatorCANInterface::~ElevatorCANInterface() {
 #endif
 }
 
-bool ElevatorCANInterface::initSocket(const char* interface_name) {
+bool ElevatorCANInterface::initSocket() {
 #if defined(__linux__)
     socket_fd = socket(PF_CAN, SOCK_RAW, CAN_RAW);
     if (socket_fd < 0) {
@@ -39,7 +39,7 @@ bool ElevatorCANInterface::initSocket(const char* interface_name) {
     }
 
     struct ifreq ifr;
-    std::strncpy(ifr.ifr_name, interface_name, IFNAMSIZ - 1);
+    std::strncpy(ifr.ifr_name, can_interface.c_str(), IFNAMSIZ - 1);
     ifr.ifr_name[IFNAMSIZ - 1] = '\0';
 
     if (ioctl(socket_fd, SIOCGIFINDEX, &ifr) < 0) {
@@ -66,8 +66,7 @@ void ElevatorCANInterface::sendElevatorStatus(int floor) {
     frame.can_dlc = 1;
     frame.data[0] = static_cast<uint8_t>(floor);
 
-    int nbytes = write(socket_fd, &frame, sizeof(frame));
-    if (nbytes < 0) {
+    if (write(socket_fd, &frame, sizeof(frame)) < 0) {
         perror("write");
     } else {
         std::cout << "[Elevator CAN] Sent current floor: " << floor << " (tx_id=0x"
@@ -77,24 +76,27 @@ void ElevatorCANInterface::sendElevatorStatus(int floor) {
 }
 
 bool ElevatorCANInterface::receiveControlCommand() {
-    auto openDoor = true;
 #if defined(__linux__)
     struct can_frame frame;
-    int nbytes = read(socket_fd, &frame, sizeof(frame));
-    if (nbytes < 0) {
-        perror("read");
-        return false;
+    fd_set read_fds;
+    FD_ZERO(&read_fds);
+    FD_SET(socket_fd, &read_fds);
+
+    struct timeval timeout;
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 1000; // 1ms timeout for non-blocking behavior
+
+    int ret = select(socket_fd + 1, &read_fds, nullptr, nullptr, &timeout);
+    if (ret > 0 && FD_ISSET(socket_fd, &read_fds)) {
+        if (read(socket_fd, &frame, sizeof(frame)) > 0) {
+            if (frame.can_id == rx_id && frame.can_dlc >= 1) {
+                bool openDoor = (frame.data[0] == 1);
+                std::cout << "[Elevator CAN] Received command from controller (rx_id=0x"
+                          << std::hex << rx_id << std::dec << "): " << (openDoor ? "Open Door" : "No Action") << "\n";
+                return openDoor;
+            }
+        }
     }
-
-    if (frame.can_id != rx_id || frame.can_dlc < 1) {
-        return false;
-    }
-
-    // 예: 0 = 아무것도 안함, 1 = 문 열기
-    openDoor = (frame.data[0] == 1);
-
-    std::cout << "[Elevator CAN] Received command from controller (rx_id=0x"
-              << std::hex << rx_id << std::dec << "): " << (openDoor ? "Open Door" : "No Action") << "\n";
 #endif
-    return openDoor;
+    return false; // No command received or timeout
 }

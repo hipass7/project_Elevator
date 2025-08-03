@@ -1,6 +1,6 @@
 #include "elevator.h"
-#include "elevator_config.h"
 #include <iostream>
+#include <stdexcept>
 
 int main(int argc, char* argv[]) {
     std::string config_path = "config/ev_config.json";
@@ -8,8 +8,13 @@ int main(int argc, char* argv[]) {
         config_path = argv[1];
     }
 
-    Elevator elevator(config_path);
-    elevator.run();
+    try {
+        Elevator elevator(config_path);
+        elevator.run();
+    } catch (const std::exception& e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+        return 1;
+    }
 
     return 0;
 }

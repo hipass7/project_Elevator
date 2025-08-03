@@ -10,19 +10,22 @@
 #include <sys/socket.h>
 #endif
 
-constexpr int timeout_ms = 300;
+constexpr int default_timeout_ms = 300;
 
 MainControllerCANInterface::MainControllerCANInterface(const ControllerConfig& config)
-    : tx_id_base(config.can_tx_id_base), rx_id(config.can_rx_id), socket_fd(-1)
+    : tx_id_base(config.can_tx_id_base), 
+      rx_id(config.can_rx_id), 
+      can_interface(config.can_interface), 
+      socket_fd(-1)
 {
 #if defined(__linux__)
-    if (!initSocket("vcan0")) {
-        std::cerr << "Failed to initialize CAN socket\n";
+    if (!initSocket()) {
+        std::cerr << "Failed to initialize CAN socket on " << can_interface << "\n";
     }
 #endif
 }
 
-bool MainControllerCANInterface::initSocket(const char* interface_name)
+bool MainControllerCANInterface::initSocket()
 {
 #if defined(__linux__)
     socket_fd = socket(PF_CAN, SOCK_RAW, CAN_RAW);
@@ -32,7 +35,7 @@ bool MainControllerCANInterface::initSocket(const char* interface_name)
     }
 
     struct ifreq ifr;
-    std::strncpy(ifr.ifr_name, interface_name, IFNAMSIZ-1);
+    std::strncpy(ifr.ifr_name, can_interface.c_str(), IFNAMSIZ-1);
     ifr.ifr_name[IFNAMSIZ-1] = 0;
 
     if (ioctl(socket_fd, SIOCGIFINDEX, &ifr) < 0) {
@@ -49,7 +52,7 @@ bool MainControllerCANInterface::initSocket(const char* interface_name)
         return false;
     }
 #endif
-    std::cout << "[MAIN] Initialized socket on interface " << interface_name << "\n";
+    std::cout << "[MAIN] Initialized socket on interface " << can_interface << "\n";
     return true;
 }
 
@@ -61,8 +64,7 @@ void MainControllerCANInterface::sendElevatorStatus(int elevator_id, int floor)
     frame.can_dlc = 1;
     frame.data[0] = static_cast<uint8_t>(floor);
 
-    int nbytes = write(socket_fd, &frame, sizeof(frame));
-    if (nbytes < 0) {
+    if (write(socket_fd, &frame, sizeof(frame)) < 0) {
         perror("write");
     } else {
         std::cout << "[MAIN] Sent elevator " << elevator_id << " floor status: " << floor << "\n";
@@ -70,11 +72,8 @@ void MainControllerCANInterface::sendElevatorStatus(int elevator_id, int floor)
 #endif
 }
 
-void MainControllerCANInterface::receiveButtonPress()
-{
+bool MainControllerCANInterface::receiveFrame(struct can_frame& frame, int timeout_ms) {
 #if defined(__linux__)
-    struct can_frame frame;
-
     fd_set read_fds;
     FD_ZERO(&read_fds);
     FD_SET(socket_fd, &read_fds);
@@ -85,17 +84,27 @@ void MainControllerCANInterface::receiveButtonPress()
 
     int ret = select(socket_fd + 1, &read_fds, nullptr, nullptr, &timeout);
     if (ret > 0 && FD_ISSET(socket_fd, &read_fds)) {
-        int nbytes = read(socket_fd, &frame, sizeof(frame));
-        if (nbytes > 0 && frame.can_id == rx_id) {
-            bool up = frame.data[1] != 0;
-            std::cout << "[MAIN] Received button press: " << (up ? "UP" : "DOWN") << "\n";
+        if (read(socket_fd, &frame, sizeof(frame)) > 0) {
+            return true;
         }
     } else if (ret == 0) {
-        std::cout << "[MAIN] receiveButtonPress timeout\n";
+        // Timeout
     } else {
         perror("select");
     }
 #endif
+    return false;
+}
+
+void MainControllerCANInterface::receiveButtonPress()
+{
+    struct can_frame frame;
+    if (receiveFrame(frame, default_timeout_ms)) {
+        if (frame.can_id == rx_id) {
+            bool up = frame.data[1] != 0;
+            std::cout << "[MAIN] Received button press: " << (up ? "UP" : "DOWN") << "\n";
+        }
+    }
 }
 
 void MainControllerCANInterface::sendEvInitialize() {
@@ -105,40 +114,20 @@ void MainControllerCANInterface::sendEvInitialize() {
     frame.can_dlc = 1;
     frame.data[0] = 0xFF;
 
-    int nbytes = write(socket_fd, &frame, sizeof(frame));
-    if (nbytes < 0) {
+    if (write(socket_fd, &frame, sizeof(frame)) < 0) {
         perror("[CAN] sendEvInitialize failed");
     } else {
-        std::cout << "[CAN] Sent EV init command\n";
+        std::cout << "[CAN] Sent EV init command" << "\n";
     }
 #endif
 }
 
 int MainControllerCANInterface::receiveEvInitialize() {
-#if defined(__linux__)
     struct can_frame frame;
-
-    fd_set read_fds;
-    FD_ZERO(&read_fds);
-    FD_SET(socket_fd, &read_fds);
-
-    struct timeval timeout;
-    timeout.tv_sec = timeout_ms / 1000;
-    timeout.tv_usec = (timeout_ms % 1000) * 1000;
-
-    int ret = select(socket_fd + 1, &read_fds, nullptr, nullptr, &timeout);
-    if (ret > 0 && FD_ISSET(socket_fd, &read_fds)) {
-        int nbytes = read(socket_fd, &frame, sizeof(frame));
-        if (nbytes > 0 && frame.data[0] == 0xFF) {
-            std::cout << "[CAN] Received EV init response from EV ID: " << static_cast<int>(frame.data[1]) << "\n";
-            return static_cast<int>(frame.data[1]);
-        }
-    } else if (ret == 0) {
-        std::cout << "[CAN] receiveEvInitialize timeout\n";
-    } else {
-        perror("select");
+    if (receiveFrame(frame, default_timeout_ms) && frame.data[0] == 0xFF) {
+        std::cout << "[CAN] Received EV init response from EV ID: " << static_cast<int>(frame.data[1]) << "\n";
+        return static_cast<int>(frame.data[1]);
     }
-#endif
     return -1;
 }
 
@@ -149,40 +138,20 @@ void MainControllerCANInterface::sendPanelInitialize() {
     frame.can_dlc = 1;
     frame.data[0] = 0xFF;
 
-    int nbytes = write(socket_fd, &frame, sizeof(frame));
-    if (nbytes < 0) {
+    if (write(socket_fd, &frame, sizeof(frame)) < 0) {
         perror("[CAN] sendPanelInitialize failed");
     } else {
-        std::cout << "[CAN] Sent Panel init command\n";
+        std::cout << "[CAN] Sent Panel init command" << "\n";
     }
 #endif
 }
 
 int MainControllerCANInterface::receivePanelInitialize() {
-#if defined(__linux__)
     struct can_frame frame;
-
-    fd_set read_fds;
-    FD_ZERO(&read_fds);
-    FD_SET(socket_fd, &read_fds);
-
-    struct timeval timeout;
-    timeout.tv_sec = timeout_ms / 1000;
-    timeout.tv_usec = (timeout_ms % 1000) * 1000;
-
-    int ret = select(socket_fd + 1, &read_fds, nullptr, nullptr, &timeout);
-    if (ret > 0 && FD_ISSET(socket_fd, &read_fds)) {
-        int nbytes = read(socket_fd, &frame, sizeof(frame));
-        if (nbytes > 0 && frame.data[0] == 0xFF) {
-            std::cout << "[CAN] Received Panel init response from Floor: " << static_cast<int>(frame.data[1]) << "\n";
-            return static_cast<int>(frame.data[1]);
-        }
-    } else if (ret == 0) {
-        std::cout << "[CAN] receivePanelInitialize timeout\n";
-    } else {
-        perror("select");
+    if (receiveFrame(frame, default_timeout_ms) && frame.data[0] == 0xFF) {
+        std::cout << "[CAN] Received Panel init response from Floor: " << static_cast<int>(frame.data[1]) << "\n";
+        return static_cast<int>(frame.data[1]);
     }
-#endif
     return -1;
 }
 
@@ -194,8 +163,7 @@ void MainControllerCANInterface::sendCANMessage(int p1, int p2)
     frame.can_dlc = 1;
     frame.data[0] = static_cast<uint8_t>(p2);
 
-    int nbytes = write(socket_fd, &frame, sizeof(frame));
-    if (nbytes < 0) {
+    if (write(socket_fd, &frame, sizeof(frame)) < 0) {
         perror("write");
     } else {
         std::cout << "[MAIN] Sent CAN message with ID 0x" << std::hex << frame.can_id << " and data " << std::dec << p2 << "\n";

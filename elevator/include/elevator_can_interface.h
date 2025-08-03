@@ -11,9 +11,10 @@ public:
     bool receiveControlCommand();  // 제어 명령 수신 (예: 문 열림 등)
 
 private:
-    bool initSocket(const char* interface_name);
+    bool initSocket();
 
     int socket_fd;
     int tx_id;
     int rx_id;
+    std::string can_interface;
 };
