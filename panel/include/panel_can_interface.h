@@ -15,7 +15,7 @@ public:
     explicit PanelCANInterface(const PanelConfig& config);
     ~PanelCANInterface();
     void sendButtonPress(bool up);
-    void receiveElevatorStatus();
+    void receiveCommand();
 
 private:
     bool initSocket();

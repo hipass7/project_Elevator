@@ -10,11 +10,10 @@
 #include <sys/socket.h>
 #endif
 
-constexpr int default_timeout_ms = 300;
+constexpr int default_timeout_ms = 100; // Use a shorter timeout for initialization checks
 
 MainControllerCANInterface::MainControllerCANInterface(const ControllerConfig& config)
-    : can_interface(config.can_interface), 
-      socket_fd(-1)
+    : can_interface(config.can_interface), socket_fd(-1)
 {
 #if defined(__linux__)
     if (!initSocket()) {
@@ -54,21 +53,117 @@ bool MainControllerCANInterface::initSocket()
     return true;
 }
 
-void MainControllerCANInterface::sendElevatorStatus(int elevator_id, int floor)
-{
+bool MainControllerCANInterface::initializeElevator(int elevator_id) {
 #if defined(__linux__)
     struct can_frame frame {};
     frame.can_id = 0x000 + elevator_id;
     frame.can_dlc = 1;
-    frame.data[0] = static_cast<uint8_t>(floor);
+    frame.data[0] = 0xFF; // Initialization command
+
+    if (write(socket_fd, &frame, sizeof(frame)) < 0) {
+        perror("write");
+        return false;
+    }
+    
+    // Wait for response
+    struct can_frame response_frame;
+    if (receiveFrame(response_frame, default_timeout_ms)) {
+        if (response_frame.can_id == (0x000 + elevator_id) && response_frame.data[0] == 0xFF && response_frame.data[1] == elevator_id) {
+            std::cout << "[MAIN] Elevator " << elevator_id << " initialized successfully.\n";
+            return true;
+        }
+    }
+#endif
+    std::cerr << "[MAIN] Elevator " << elevator_id << " failed to initialize.\n";
+    return false;
+}
+
+bool MainControllerCANInterface::initializePanel(int elevator_id, int floor) {
+#if defined(__linux__)
+    struct can_frame frame {};
+    // Panels are addressed by the elevator they serve
+    frame.can_id = 0x100 + elevator_id; 
+    frame.can_dlc = 2;
+    frame.data[0] = 0xFF; // Initialization command
+    frame.data[1] = static_cast<uint8_t>(floor);
+
+    if (write(socket_fd, &frame, sizeof(frame)) < 0) {
+        perror("write");
+        return false;
+    }
+
+    // Wait for response
+    struct can_frame response_frame;
+    if (receiveFrame(response_frame, default_timeout_ms)) {
+        if (response_frame.can_id == (0x100 + elevator_id) && response_frame.data[0] == 0xFF && response_frame.data[1] == floor) {
+            std::cout << "[MAIN] Panel for elevator " << elevator_id << " at floor " << floor << " initialized successfully.\n";
+            return true;
+        }
+    }
+#endif
+    std::cerr << "[MAIN] Panel for elevator " << elevator_id << " at floor " << floor << " failed to initialize.\n";
+    return false;
+}
+
+void MainControllerCANInterface::sendMoveCommand(int elevator_id, int floor) {
+#if defined(__linux__)
+    struct can_frame frame {};
+    frame.can_id = 0x000 + elevator_id;
+    frame.can_dlc = 2; // DLC = 2 for move command
+    frame.data[0] = 0x00; // Command type: 0x00 for move
+    frame.data[1] = static_cast<uint8_t>(floor);
 
     if (write(socket_fd, &frame, sizeof(frame)) < 0) {
         perror("write");
     } else {
-        std::cout << "[MAIN] Sent elevator " << elevator_id << " floor status: " << floor << "\n";
+        std::cout << "[MAIN] Sent move command to elevator " << elevator_id << " to floor " << floor << "\n";
     }
 #endif
 }
+
+void MainControllerCANInterface::sendElevatorCommand(int elevator_id, int command) {
+#if defined(__linux__)
+    struct can_frame frame {};
+    frame.can_id = 0x000 + elevator_id;
+    frame.can_dlc = 1;
+    frame.data[0] = static_cast<uint8_t>(command); // e.g., 1 for open door
+
+    if (write(socket_fd, &frame, sizeof(frame)) < 0) {
+        perror("write");
+    } else {
+        std::cout << "[MAIN] Sent command " << command << " to elevator " << elevator_id << "\n";
+    }
+#endif
+}
+
+void MainControllerCANInterface::receiveMessages() {
+    struct can_frame frame;
+    // Use a longer timeout for general message receiving
+    if (receiveFrame(frame, 1000)) { 
+        processIncomingFrame(frame);
+    }
+}
+
+void MainControllerCANInterface::processIncomingFrame(const struct can_frame& frame) {
+    // Check if it's a button press from a panel
+    if (frame.can_id >= 0x100 && frame.can_id <= 0x1FF) {
+        int elevator_id = frame.can_id - 0x100;
+        int floor = frame.data[0];
+        bool is_up_button = (frame.data[1] == 0x01);
+        std::cout << "[MAIN] Received button press from panel for elevator " << elevator_id 
+                  << " at floor " << floor << " (" << (is_up_button ? "UP" : "DOWN") << ")\n";
+        // Here you would add the request to the elevator's queue
+    }
+    // Check if it's a status update from an elevator
+    else if (frame.can_id >= 0x000 && frame.can_id <= 0x0FF) {
+        int elevator_id = frame.can_id;
+        int current_floor = frame.data[0];
+        std::cout << "[MAIN] Received status from elevator " << elevator_id 
+                  << ": currently at floor " << current_floor << "\n";
+        // Here you would update the elevator's state
+    }
+}
+
 
 bool MainControllerCANInterface::receiveFrame(struct can_frame& frame, int timeout_ms) {
 #if defined(__linux__)
@@ -85,88 +180,10 @@ bool MainControllerCANInterface::receiveFrame(struct can_frame& frame, int timeo
         if (read(socket_fd, &frame, sizeof(frame)) > 0) {
             return true;
         }
-    } else if (ret == 0) {
-        // Timeout
-    } else {
+    }
+    else if (ret < 0) {
         perror("select");
     }
 #endif
     return false;
-}
-
-void MainControllerCANInterface::receiveButtonPress()
-{
-    struct can_frame frame;
-    if (receiveFrame(frame, default_timeout_ms)) {
-        if (frame.can_id >= 0x100 && frame.can_id <= 0x1FF) { // Panel CAN ID range
-            int elevator_id = frame.can_id - 0x100;
-            int floor = frame.data[0];
-            bool up = frame.data[1] != 0;
-            std::cout << "[MAIN] Received button press from elevator " << elevator_id << " at floor " << floor << ": " << (up ? "UP" : "DOWN") << "\n";
-        }
-    }
-}
-
-void MainControllerCANInterface::sendEvInitialize() {
-#if defined(__linux__)
-    struct can_frame frame{};
-    frame.can_id = 0x000; // Broadcast to all elevators
-    frame.can_dlc = 1;
-    frame.data[0] = 0xFF;
-
-    if (write(socket_fd, &frame, sizeof(frame)) < 0) {
-        perror("[CAN] sendEvInitialize failed");
-    } else {
-        std::cout << "[CAN] Sent EV init command" << "\n";
-    }
-#endif
-}
-
-int MainControllerCANInterface::receiveEvInitialize() {
-    struct can_frame frame;
-    if (receiveFrame(frame, default_timeout_ms) && frame.data[0] == 0xFF) {
-        std::cout << "[CAN] Received EV init response from EV ID: " << static_cast<int>(frame.data[1]) << "\n";
-        return static_cast<int>(frame.data[1]);
-    }
-    return -1;
-}
-
-void MainControllerCANInterface::sendPanelInitialize() {
-#if defined(__linux__)
-    struct can_frame frame{};
-    frame.can_id = 0x100; // Broadcast to all panels
-    frame.can_dlc = 1;
-    frame.data[0] = 0xFF;
-
-    if (write(socket_fd, &frame, sizeof(frame)) < 0) {
-        perror("[CAN] sendPanelInitialize failed");
-    } else {
-        std::cout << "[CAN] Sent Panel init command" << "\n";
-    }
-#endif
-}
-
-int MainControllerCANInterface::receivePanelInitialize() {
-    struct can_frame frame;
-    if (receiveFrame(frame, default_timeout_ms) && frame.data[0] == 0xFF) {
-        std::cout << "[CAN] Received Panel init response from Floor: " << static_cast<int>(frame.data[1]) << "\n";
-        return static_cast<int>(frame.data[1]);
-    }
-    return -1;
-}
-
-void MainControllerCANInterface::sendElevatorCommand(int elevator_id, int command)
-{
-#if defined(__linux__)
-    struct can_frame frame {};
-    frame.can_id = 0x000 + elevator_id;
-    frame.can_dlc = 1;
-    frame.data[0] = static_cast<uint8_t>(command);
-
-    if (write(socket_fd, &frame, sizeof(frame)) < 0) {
-        perror("write");
-    } else {
-        std::cout << "[MAIN] Sent command " << command << " to elevator " << elevator_id << "\n";
-    }
-#endif
 }

@@ -83,33 +83,42 @@ bool ElevatorCANInterface::receiveControlCommand() {
 
     struct timeval timeout;
     timeout.tv_sec = 0;
-    timeout.tv_usec = 1000; // 1ms timeout for non-blocking behavior
+    timeout.tv_usec = 1000; // 1ms timeout
 
     int ret = select(socket_fd + 1, &read_fds, nullptr, nullptr, &timeout);
     if (ret > 0 && FD_ISSET(socket_fd, &read_fds)) {
         if (read(socket_fd, &frame, sizeof(frame)) > 0) {
-            if (frame.can_id == (0x000 + id)) { // Check for the elevator's specific CAN ID
-                if (frame.data[0] == 0xFF) { // Initialization command
-                    std::cout << "[Elevator CAN] Received initialization command from controller\n";
-                    // Respond to initialization command
+            if (frame.can_id == id) { // Addressed to this elevator
+                // Initialization Command
+                if (frame.can_dlc == 1 && frame.data[0] == 0xFF) {
+                    std::cout << "[Elevator " << id << "] Received initialization command.\n";
                     struct can_frame response_frame {};
-                    response_frame.can_id = 0x000 + id;
+                    response_frame.can_id = id;
                     response_frame.can_dlc = 2;
                     response_frame.data[0] = 0xFF;
                     response_frame.data[1] = static_cast<uint8_t>(id);
                     if (write(socket_fd, &response_frame, sizeof(response_frame)) < 0) {
-                        perror("write");
+                        perror("write response");
                     }
-                    return false; // Not a door command
+                    return false; // Not a movement command
+                } 
+                // Move Command
+                else if (frame.can_dlc == 2 && frame.data[0] == 0x00) {
+                    int target_floor = frame.data[1];
+                    std::cout << "[Elevator " << id << "] Received move command to floor " << target_floor << "\n";
+                    // Here, you would trigger the elevator movement logic
+                    // For now, just acknowledge by sending status.
+                    sendElevatorStatus(target_floor);
+                    return false; // Placeholder
+                } 
+                // Open Door Command
+                else if (frame.can_dlc == 1 && frame.data[0] == 1) {
+                     std::cout << "[Elevator " << id << "] Received open door command.\n";
+                     return true; // Indicates door should be opened
                 }
-
-                bool openDoor = (frame.data[0] == 1);
-                std::cout << "[Elevator CAN] Received command from controller (rx_id=0x"
-                          << std::hex << (0x000 + id) << std::dec << "): " << (openDoor ? "Open Door" : "No Action") << "\n";
-                return openDoor;
             }
         }
     }
 #endif
-    return false; // No command received or timeout
+    return false;
 }

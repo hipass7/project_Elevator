@@ -74,7 +74,7 @@ void PanelCANInterface::sendButtonPress(bool up) {
 #endif
 }
 
-void PanelCANInterface::receiveElevatorStatus() {
+void PanelCANInterface::receiveCommand() {
 #if defined(__linux__)
     struct can_frame frame;
     fd_set read_fds;
@@ -83,27 +83,31 @@ void PanelCANInterface::receiveElevatorStatus() {
 
     struct timeval timeout;
     timeout.tv_sec = 0;
-    timeout.tv_usec = 1000; // 1ms timeout for non-blocking behavior
+    timeout.tv_usec = 1000; // 1ms timeout
 
     int ret = select(socket_fd + 1, &read_fds, nullptr, nullptr, &timeout);
     if (ret > 0 && FD_ISSET(socket_fd, &read_fds)) {
         if (read(socket_fd, &frame, sizeof(frame)) > 0) {
-            if (frame.can_id == 0x100) { // Check for broadcast from main controller
-                if (frame.data[0] == 0xFF) { // Initialization command
-                    std::cout << "[Panel CAN] Received initialization command from controller\n";
-                    // Respond to initialization command
+            // Check for commands addressed to the elevator this panel serves
+            if (frame.can_id == (0x100 + elevator_id)) {
+                // Initialization command
+                if (frame.can_dlc == 2 && frame.data[0] == 0xFF && frame.data[1] == floor) {
+                    std::cout << "[Panel " << floor << "] Received initialization command.\n";
                     struct can_frame response_frame {};
                     response_frame.can_id = 0x100 + elevator_id;
                     response_frame.can_dlc = 2;
                     response_frame.data[0] = 0xFF;
                     response_frame.data[1] = static_cast<uint8_t>(floor);
                     if (write(socket_fd, &response_frame, sizeof(response_frame)) < 0) {
-                        perror("write");
+                        perror("write response");
                     }
                 }
-            } else if (frame.can_id == (0x000 + elevator_id)) {
-                std::cout << "[PANEL] Received elevator status from id=" << (0x000 + elevator_id)
-                          << " floor=" << static_cast<int>(frame.data[0]) << "\n";
+            } 
+            // Check for status updates from the elevator this panel serves
+            else if (frame.can_id == elevator_id) {
+                int current_floor = frame.data[0];
+                std::cout << "[Panel " << floor << "] Received elevator status update. Current floor: " << current_floor << "\n";
+                // Here, you would update the panel's display LEDs
             }
         }
     }
