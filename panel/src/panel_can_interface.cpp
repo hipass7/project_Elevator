@@ -16,7 +16,7 @@ PanelCANInterface::PanelCANInterface(const PanelConfig& config)
     if (!initSocket()) {
         std::cerr << "[PANEL CAN] Failed to initialize SocketCAN on " << can_interface << "\n";
     } else {
-        std::cout << "[PANEL CAN] Initialized with tx_id=" << tx_id << ", rx_id=" << rx_id << "\n";
+        std::cout << "[PANEL CAN] Initialized with floor=" << floor << ", elevator_id=" << elevator_id << "\n";
     }
 #endif
 }

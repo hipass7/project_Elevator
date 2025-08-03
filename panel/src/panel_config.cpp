@@ -10,8 +10,7 @@ PanelConfig PanelConfig::loadFromFile(const std::string& path) {
     return PanelConfig{
         j["can_interface"],
         j["floor"],
-        j["can_tx_id"],
-        j["can_rx_id"],
+        j["elevator_id"],
         j["gpio_up_button"],
         j["gpio_down_button"],
         j["gpio_floor_led"],

@@ -16,8 +16,7 @@ ElevatorCANInterface::ElevatorCANInterface(const ElevatorConfig& config)
     if (!initSocket()) {
         std::cerr << "[Elevator CAN] Failed to initialize SocketCAN on " << can_interface << "\n";
     } else {
-        std::cout << "[Elevator CAN] Initialized with tx_id=0x" << std::hex << tx_id
-                  << " rx_id=0x" << rx_id << std::dec << "\n";
+        std::cout << "[Elevator CAN] Initialized with id=" << id << "\n";
     }
 #endif
 }
