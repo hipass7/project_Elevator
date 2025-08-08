@@ -8,7 +8,7 @@
 #include <iostream>
 
 int main(int argc, char* argv[]) {
-    std::string config_path = "config/config.json";
+    std::string config_path = "../../config/config.json";
     if (argc > 1) {
         config_path = argv[1];
     }

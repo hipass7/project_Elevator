@@ -74,6 +74,22 @@ void ElevatorCANInterface::sendElevatorStatus(int floor) {
 #endif
 }
 
+void ElevatorCANInterface::sendFloorRequestButton(int floor) {
+#if defined(__linux__)
+    struct can_frame frame {};
+    frame.can_id = 0x000 + id;
+    frame.can_dlc = 1;
+    frame.data[0] = static_cast<uint8_t>(floor);
+
+    if (write(socket_fd, &frame, sizeof(frame)) < 0) {
+        perror("write");
+    } else {
+        std::cout << "[Elevator CAN] Sent request floor: " << floor << " (tx_id=0x"
+                  << std::hex << (0x000 + id) << std::dec << ")\n";
+    }
+#endif
+}
+
 bool ElevatorCANInterface::receiveControlCommand() {
 #if defined(__linux__)
     struct can_frame frame;

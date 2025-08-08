@@ -40,3 +40,17 @@ Elevator 동작 과정을 나만의 과정으로 해석하여 Python 프로그�
 
 ### Reference
 
+빌드하는 방법
+cd script
+./build.sh
+
+도커 생성하는 방법
+cd docker
+./create-docker.sh
+
+도커 실행하는 방법
+cd docker
+./run-docker.sh -c {container_name}
+
+도커 내에서 binary 실행하는 방법
+-

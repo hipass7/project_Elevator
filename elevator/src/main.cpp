@@ -3,7 +3,7 @@
 #include <stdexcept>
 
 int main(int argc, char* argv[]) {
-    std::string config_path = "config/ev_config.json";
+    std::string config_path = "../config/ev_config.json";
     if (argc > 1) {
         config_path = argv[1];
     }

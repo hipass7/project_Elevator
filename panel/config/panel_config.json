@@ -1,7 +1,7 @@
 {
   "can_interface": "vcan0",
-  "floor": 5,
-  "elevator_id": 17,
+  "floor": 1,
+  "elevator_id": 1,
   "gpio_up_button": 17,
   "gpio_down_button": 27,
   "gpio_floor_led": 22,
