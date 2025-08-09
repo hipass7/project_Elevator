@@ -158,8 +158,10 @@ void MainControllerCANInterface::processIncomingFrame(const struct can_frame& fr
     else if (frame.can_id >= 0x000 && frame.can_id <= 0x0FF) {
         int elevator_id = frame.can_id;
         int current_floor = frame.data[0];
+        int elevator_status = frame.data[1];
         std::cout << "[MAIN] Received status from elevator " << elevator_id 
-                  << ": currently at floor " << current_floor << "\n";
+                  << ": currently at floor " << current_floor 
+                  << ": elevator status " << elevator_status << "\n";
         // Here you would update the elevator's state
     }
 }

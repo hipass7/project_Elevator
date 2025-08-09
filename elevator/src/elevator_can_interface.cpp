@@ -58,33 +58,21 @@ bool ElevatorCANInterface::initSocket() {
     return true;
 }
 
-void ElevatorCANInterface::sendElevatorStatus(int floor) {
+void ElevatorCANInterface::sendCommand(int floor, const ElevatorState& state) {
 #if defined(__linux__)
     struct can_frame frame {};
     frame.can_id = 0x000 + id;
-    frame.can_dlc = 1;
+    frame.can_dlc = 2;
     frame.data[0] = static_cast<uint8_t>(floor);
+    frame.data[1] = static_cast<uint8_t>(state);
+    if (state == ElevatorState::status) {
+        // if dest - floor > 0 --> frame.data[2] 0x01
+    }
 
     if (write(socket_fd, &frame, sizeof(frame)) < 0) {
         perror("write");
     } else {
         std::cout << "[Elevator CAN] Sent current floor: " << floor << " (tx_id=0x"
-                  << std::hex << (0x000 + id) << std::dec << ")\n";
-    }
-#endif
-}
-
-void ElevatorCANInterface::sendFloorRequestButton(int floor) {
-#if defined(__linux__)
-    struct can_frame frame {};
-    frame.can_id = 0x000 + id;
-    frame.can_dlc = 1;
-    frame.data[0] = static_cast<uint8_t>(floor);
-
-    if (write(socket_fd, &frame, sizeof(frame)) < 0) {
-        perror("write");
-    } else {
-        std::cout << "[Elevator CAN] Sent request floor: " << floor << " (tx_id=0x"
                   << std::hex << (0x000 + id) << std::dec << ")\n";
     }
 #endif
@@ -124,7 +112,7 @@ bool ElevatorCANInterface::receiveControlCommand() {
                     std::cout << "[Elevator " << id << "] Received move command to floor " << target_floor << "\n";
                     // Here, you would trigger the elevator movement logic
                     // For now, just acknowledge by sending status.
-                    sendElevatorStatus(target_floor);
+                    // sendElevatorStatus(target_floor);
                     return false; // Placeholder
                 } 
                 // Open Door Command
