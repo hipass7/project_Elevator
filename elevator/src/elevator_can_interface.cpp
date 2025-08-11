@@ -78,7 +78,7 @@ void ElevatorCANInterface::sendCommand(int floor, const ElevatorState& state) {
 #endif
 }
 
-bool ElevatorCANInterface::receiveControlCommand() {
+bool ElevatorCANInterface::receiveCommand() {
 #if defined(__linux__)
     struct can_frame frame;
     fd_set read_fds;
@@ -120,6 +120,7 @@ bool ElevatorCANInterface::receiveControlCommand() {
                      std::cout << "[Elevator " << id << "] Received open door command.\n";
                      return true; // Indicates door should be opened
                 }
+                
             }
         }
     }

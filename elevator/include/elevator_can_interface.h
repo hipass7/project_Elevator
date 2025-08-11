@@ -14,7 +14,7 @@ public:
     ~ElevatorCANInterface();
 
     void sendCommand(int floor, const ElevatorState& state);   // 엘리베이터 현재 층 송신
-    bool receiveControlCommand();  // 제어 명령 수신 (예: 문 열림 등)
+    bool receiveCommand();  // 제어 명령 수신 (예: 문 열림 등)
 
 private:
     bool initSocket();

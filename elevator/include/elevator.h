@@ -10,5 +10,8 @@ public:
 private:
     ElevatorConfig config;
     ElevatorCANInterface can_interface;
+
     int current_floor;
+    int dest_floor;
+    int direction;
 };

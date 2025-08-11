@@ -13,7 +13,7 @@ Elevator::Elevator(const std::string& config_path)
 void Elevator::run() {
     std::cout << "[Elevator] Running elevator logic...\n";
     while (true) {
-        if (can_interface.receiveControlCommand()) {
+        if (can_interface.receiveCommand()) {
             // '문 열림' 명령 처리
             std::cout << "[Elevator] Door opening...\n";
             std::this_thread::sleep_for(std::chrono::seconds(config.door_open_duration_sec));
