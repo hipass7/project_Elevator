@@ -78,7 +78,7 @@ void ElevatorCANInterface::sendCommand(int floor, const ElevatorState& state) {
 #endif
 }
 
-bool ElevatorCANInterface::receiveCommand() {
+bool ElevatorCANInterface::receiveCommand(int& dest) {
 #if defined(__linux__)
     struct can_frame frame;
     fd_set read_fds;
@@ -107,20 +107,25 @@ bool ElevatorCANInterface::receiveCommand() {
                     return false; // Not a movement command
                 } 
                 // Move Command
-                else if (frame.can_dlc == 2 && frame.data[0] == 0x00) {
-                    int target_floor = frame.data[1];
-                    std::cout << "[Elevator " << id << "] Received move command to floor " << target_floor << "\n";
-                    // Here, you would trigger the elevator movement logic
-                    // For now, just acknowledge by sending status.
-                    // sendElevatorStatus(target_floor);
-                    return false; // Placeholder
-                } 
-                // Open Door Command
-                else if (frame.can_dlc == 1 && frame.data[0] == 1) {
-                     std::cout << "[Elevator " << id << "] Received open door command.\n";
-                     return true; // Indicates door should be opened
+                // else if (frame.can_dlc == 2 && frame.data[0] == 0x00) {
+                //     int target_floor = frame.data[1];
+                //     std::cout << "[Elevator " << id << "] Received move command to floor " << target_floor << "\n";
+                //     // Here, you would trigger the elevator movement logic
+                //     // For now, just acknowledge by sending status.
+                //     // sendElevatorStatus(target_floor);
+                //     return false; // Placeholder
+                // } 
+                // // Open Door Command
+                // else if (frame.can_dlc == 1 && frame.data[0] == 1) {
+                //      std::cout << "[Elevator " << id << "] Received open door command.\n";
+                //      return true; // Indicates door should be opened
+                // }
+                // Receive destination command from main controller
+                else if (frame.can_dlc == 1) {
+                    int dest = frame.data[0];
+                    std::cout << "[Elevator " << id << "] Received : " << dest << " floor is destination.\n";
+                    return true;
                 }
-                
             }
         }
     }

@@ -2,10 +2,19 @@
 #include "elevator_can_interface.h"
 #include "elevator_config.h"
 
+enum class Direction : int8_t {
+    Stop = 0,
+    Up   = 1,
+    Down = -1
+};
+
 class Elevator {
 public:
     explicit Elevator(const std::string& config_path);
     void run();
+    int checkCurrentFloor();
+    void updateDirection();
+    void stopAndOpenDoor();
 
 private:
     ElevatorConfig config;
@@ -13,5 +22,6 @@ private:
 
     int current_floor;
     int dest_floor;
-    int direction;
+    Direction direction;
+    bool doorOpen;
 };

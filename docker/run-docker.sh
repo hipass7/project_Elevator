@@ -16,7 +16,7 @@ while getopts "c:" opt; do
 done
 
 # 컨테이너 실행
-docker run -it --rm --privileged --network=host \
+docker run -it --privileged --network=host \
     --name "$CONTAINER_NAME" \
     -v "$(pwd)/..:$WORKDIR:Z" \
     "$IMAGE_NAME" \
