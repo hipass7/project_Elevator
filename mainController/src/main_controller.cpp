@@ -29,9 +29,9 @@ void MainController::initialize() {
     //canInterface.sendEvInitialize();
     for (int i = 0; i < numElevators; ++i) {
         int evId = -1;
-        int retries = 3;
+        int retries = 5;
         while (retries-- > 0 && evId == -1) {
-            //evId = canInterface.receiveEvInitialize();
+            (void)canInterface.initializeElevator(evId);
             if (evId == -1) {
                 std::cerr << "Elevator initialization failed. Retrying..." << std::endl;
                 std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -46,7 +46,7 @@ void MainController::initialize() {
     //canInterface.sendPanelInitialize();
     for (int i = 0; i < numFloors; ++i) {
         int panelId = -1;
-        int retries = 3;
+        int retries = 0;
         while (retries-- > 0 && panelId == -1) {
             //panelId = canInterface.receivePanelInitialize();
             if (panelId == -1) {
@@ -69,7 +69,20 @@ void MainController::run() {
 
     while (true) {
         canInterface.receiveMessages(); // 이제 이 함수는 논블로킹입니다.
+        requests = canInterface.requests;
+        for (auto& rq : requests) {
+            // 해당 요청이 어디가면 좋을 지 검사
+            for (auto& ev : evMap) {
+                ev.second.emplace_back(rq.first);
+            }
+        }
         // 다른 주기적인 작업들을 여기에 추가할 수 있습니다.
+        for (auto& ev : evMap) {
+            if (ev.second.size() > 0) {
+                canInterface.sendMoveCommand(ev.first, ev.second[0]);
+                ev.second.erase(ev.second.begin());
+            }
+        }
         std::this_thread::sleep_for(std::chrono::milliseconds(scanIntervalMs));
     }
 

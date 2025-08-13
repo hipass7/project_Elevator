@@ -53,7 +53,7 @@ bool MainControllerCANInterface::initSocket()
     return true;
 }
 
-bool MainControllerCANInterface::initializeElevator(int elevator_id) {
+bool MainControllerCANInterface::initializeElevator(int& elevator_id) {
 #if defined(__linux__)
     struct can_frame frame {};
     frame.can_id = 0x000 + elevator_id;
@@ -68,9 +68,17 @@ bool MainControllerCANInterface::initializeElevator(int elevator_id) {
     // Wait for response
     struct can_frame response_frame;
     if (receiveFrame(response_frame, default_timeout_ms)) {
-        if (response_frame.can_id == (0x000 + elevator_id) && response_frame.data[0] == 0xFF && response_frame.data[1] == elevator_id) {
-            std::cout << "[MAIN] Elevator " << elevator_id << " initialized successfully.\n";
-            return true;
+        // 비트마스크로 상위 비트를 제거하고 확인 (0x000 ~ 0x0FF 범위만 허용)
+        if ( (response_frame.can_id & 0xF00) == 0x000 ) {
+            int received_id = response_frame.can_id - 0x000;
+            if (response_frame.data[0] == 0xFF) {
+                elevator_id = received_id; // parameter에 반환
+                std::cout << "[MAIN] Elevator " << elevator_id << " initialized successfully.\n";
+                return true;
+            }
+        } else {
+            std::cerr << "[MAIN] Ignored CAN ID: 0x" << std::hex 
+                      << response_frame.can_id << std::dec << "\n";
         }
     }
 #endif
@@ -106,40 +114,40 @@ bool MainControllerCANInterface::initializePanel(int elevator_id, int floor) {
 }
 
 void MainControllerCANInterface::sendMoveCommand(int elevator_id, int floor) {
-#if defined(__linux__)
-    struct can_frame frame {};
-    frame.can_id = 0x000 + elevator_id;
-    frame.can_dlc = 2; // DLC = 2 for move command
-    frame.data[0] = 0x00; // Command type: 0x00 for move
-    frame.data[1] = static_cast<uint8_t>(floor);
-
-    if (write(socket_fd, &frame, sizeof(frame)) < 0) {
-        perror("write");
-    } else {
-        std::cout << "[MAIN] Sent move command to elevator " << elevator_id << " to floor " << floor << "\n";
-    }
-#endif
+    sendCommand(elevator_id, { static_cast<uint8_t>(floor) });
 }
 
 void MainControllerCANInterface::sendElevatorCommand(int elevator_id, int command) {
+    sendCommand(elevator_id, { static_cast<uint8_t>(command) });
+}
+
+void MainControllerCANInterface::sendCommand(int elevator_id, const std::vector<uint8_t>& data) {
 #if defined(__linux__)
     struct can_frame frame {};
-    frame.can_id = 0x000 + elevator_id;
-    frame.can_dlc = 1;
-    frame.data[0] = static_cast<uint8_t>(command); // e.g., 1 for open door
+    frame.can_id = static_cast<canid_t>(0x000 + elevator_id);
+    frame.can_dlc = static_cast<__u8>(data.size());
+
+    for (size_t i = 0; i < data.size() && i < sizeof(frame.data); ++i) {
+        frame.data[i] = data[i];
+    }
 
     if (write(socket_fd, &frame, sizeof(frame)) < 0) {
         perror("write");
     } else {
-        std::cout << "[MAIN] Sent command " << command << " to elevator " << elevator_id << "\n";
+        std::cout << "[MAIN] Sent command to elevator " << elevator_id << " with data:";
+        for (auto byte : data) {
+            std::cout << " 0x" << std::hex << static_cast<int>(byte);
+        }
+        std::cout << std::dec << "\n";
     }
 #endif
 }
 
 void MainControllerCANInterface::receiveMessages() {
+    requests.clear();
     struct can_frame frame;
     // Use a longer timeout for general message receiving
-    if (receiveFrame(frame, 1000)) { 
+    if (receiveFrame(frame, 0)) { 
         processIncomingFrame(frame);
     }
 }
@@ -152,6 +160,7 @@ void MainControllerCANInterface::processIncomingFrame(const struct can_frame& fr
         bool is_up_button = (frame.data[1] == 0x01);
         std::cout << "[MAIN] Received button press from panel for elevator " << elevator_id 
                   << " at floor " << floor << " (" << (is_up_button ? "UP" : "DOWN") << ")\n";
+        requests.emplace_back(floor, is_up_button);
         // Here you would add the request to the elevator's queue
     }
     // Check if it's a status update from an elevator
@@ -159,10 +168,14 @@ void MainControllerCANInterface::processIncomingFrame(const struct can_frame& fr
         int elevator_id = frame.can_id;
         int current_floor = frame.data[0];
         int elevator_status = frame.data[1];
+        int direction = frame.data[2];
         std::cout << "[MAIN] Received status from elevator " << elevator_id 
                   << ": currently at floor " << current_floor 
                   << ": elevator status " << elevator_status << "\n";
         // Here you would update the elevator's state
+        if (direction == 0 && requests.size() > 0) {
+            requests.erase(requests.begin());
+        }
     }
 }
 

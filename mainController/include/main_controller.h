@@ -25,4 +25,5 @@ private:
     MainControllerCANInterface canInterface;
     std::map<int, std::vector<int>> evMap{};
     std::vector<int> panelList{};
+    std::vector<std::pair<int, bool>> requests;
 };

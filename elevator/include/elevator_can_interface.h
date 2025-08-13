@@ -13,7 +13,8 @@ public:
     explicit ElevatorCANInterface(const ElevatorConfig& config);
     ~ElevatorCANInterface();
 
-    void sendCommand(int floor, const ElevatorState& state);   // 엘리베이터 현재 층 송신
+    void sendCommand(int floor, const ElevatorState& state, int direction);   // 엘리베이터 현재 층 송신
+    void sendCommand();
     bool receiveCommand(int& dest);  // 제어 명령 수신 (예: 문 열림 등)
 
 private:

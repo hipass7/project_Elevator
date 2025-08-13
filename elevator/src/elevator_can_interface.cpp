@@ -58,13 +58,14 @@ bool ElevatorCANInterface::initSocket() {
     return true;
 }
 
-void ElevatorCANInterface::sendCommand(int floor, const ElevatorState& state) {
+void ElevatorCANInterface::sendCommand(int floor, const ElevatorState& state, int direction) {
 #if defined(__linux__)
     struct can_frame frame {};
     frame.can_id = 0x000 + id;
-    frame.can_dlc = 2;
+    frame.can_dlc = 3;
     frame.data[0] = static_cast<uint8_t>(floor);
     frame.data[1] = static_cast<uint8_t>(state);
+    frame.data[2] = static_cast<uint8_t>(direction);
     if (state == ElevatorState::status) {
         // if dest - floor > 0 --> frame.data[2] 0x01
     }
@@ -75,6 +76,21 @@ void ElevatorCANInterface::sendCommand(int floor, const ElevatorState& state) {
         std::cout << "[Elevator CAN] Sent current floor: " << floor << " (tx_id=0x"
                   << std::hex << (0x000 + id) << std::dec << ")\n";
     }
+#endif
+}
+
+void ElevatorCANInterface::sendCommand() { // simple_mode 전용
+#if defined(__linux__)
+        struct can_frame frame {};
+        frame.can_id = 0x000 + id;
+        frame.can_dlc = 1;
+        frame.data[0] = 0xFF;
+
+        if (write(socket_fd, &frame, sizeof(frame)) < 0) {
+            perror("write");
+        } else {
+            std::cout << "[Elevator CAN] Sent simple command: 0xFF\n";
+        }
 #endif
 }
 
@@ -122,7 +138,7 @@ bool ElevatorCANInterface::receiveCommand(int& dest) {
                 // }
                 // Receive destination command from main controller
                 else if (frame.can_dlc == 1) {
-                    int dest = frame.data[0];
+                    dest = frame.data[0];
                     std::cout << "[Elevator " << id << "] Received : " << dest << " floor is destination.\n";
                     return true;
                 }

@@ -1,6 +1,6 @@
 {
   "num_floors": 5,
-  "num_elevators": 3,
+  "num_elevators": 1,
   "can_interface": "vcan0",
   "floor_panel_scan_interval_ms": 100,
   "building_name": "MainOffice"
