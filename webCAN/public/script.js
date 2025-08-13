@@ -14,8 +14,10 @@ socket.onerror = (e) => log("❌ WebSocket 오류 발생");
 
 socket.onmessage = (event) => {
   const message = JSON.parse(event.data);
-  if (message.type === "status") {
-    const { elevatorId, floor, door, direction } = message;
+  // CAN ID가 0x000 + elevatorId 범위
+  if (message.id >= 0x000 && message.id <= 0x0FF) {
+    const elevatorId = message.id; // CAN ID에서 엘리베이터 번호
+    const [floor, door, direction] = message.data;
 
     // 상태 텍스트 갱신
     const status = document.getElementById(`status-${elevatorId}`);
@@ -37,8 +39,8 @@ function sendCANMessage(id, data) {
   log(`📤 전송: ${JSON.stringify(msg)}`);
 }
 
-function sendExternalCall(floor, direction) {
-  sendCANMessage(0x400, [floor, direction]);
+function sendExternalCall(floor, direction, elevatorId) {
+  sendCANMessage(0x100 + elevatorId, [floor, direction]);
 }
 
 function sendInternalSelect(floor, elevatorId) {
@@ -51,6 +53,7 @@ function sendDoorCommand(cmd, elevatorId) {
 
 // 외부 호출 UI 생성
 const externalPanel = document.getElementById("external-panel");
+const elevatorId = 1; // 외부 호출이 연결될 엘리베이터 ID
 floors.forEach(f => {
   const row = document.createElement("div");
   row.className = "floor";
@@ -64,7 +67,7 @@ floors.forEach(f => {
     const upBtn = document.createElement("button");
     upBtn.className = "btn";
     upBtn.innerText = "▲";
-    upBtn.onclick = () => sendExternalCall(f, 1);
+    upBtn.onclick = () => sendExternalCall(f, 1, elevatorId);
     row.appendChild(upBtn);
   }
 
@@ -72,7 +75,7 @@ floors.forEach(f => {
     const downBtn = document.createElement("button");
     downBtn.className = "btn";
     downBtn.innerText = "▼";
-    downBtn.onclick = () => sendExternalCall(f, 0);
+    downBtn.onclick = () => sendExternalCall(f, 0, elevatorId);
     row.appendChild(downBtn);
   }
 
