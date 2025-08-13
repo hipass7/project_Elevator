@@ -58,14 +58,15 @@ bool ElevatorCANInterface::initSocket() {
     return true;
 }
 
-void ElevatorCANInterface::sendCommand(int floor, const ElevatorState& state, int direction) {
+void ElevatorCANInterface::sendCommand(int floor, const ElevatorState& state, int direction, bool door) {
 #if defined(__linux__)
     struct can_frame frame {};
     frame.can_id = 0x000 + id;
-    frame.can_dlc = 3;
+    frame.can_dlc = 4;
     frame.data[0] = static_cast<uint8_t>(floor);
     frame.data[1] = static_cast<uint8_t>(state);
     frame.data[2] = static_cast<uint8_t>(direction);
+    frame.data[3] = static_cast<uint8_t>(door);
     if (state == ElevatorState::status) {
         // if dest - floor > 0 --> frame.data[2] 0x01
     }

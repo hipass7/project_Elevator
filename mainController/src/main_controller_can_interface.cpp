@@ -169,9 +169,10 @@ void MainControllerCANInterface::processIncomingFrame(const struct can_frame& fr
         int current_floor = frame.data[0];
         int elevator_status = frame.data[1];
         int direction = frame.data[2];
+        int door = frame.data[3];
         std::cout << "[MAIN] Received status from elevator " << elevator_id 
                   << ": currently at floor " << current_floor 
-                  << ": elevator status " << elevator_status << "\n";
+                  << ": elevator direction " << direction << "\n";
         // Here you would update the elevator's state
         if (direction == 0 && requests.size() > 0) {
             requests.erase(requests.begin());

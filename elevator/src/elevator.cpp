@@ -33,7 +33,7 @@ void Elevator::run() {
             updateDirection();
 
             // 4. update면 send
-            can_interface.sendCommand(current_floor, ElevatorState::status, static_cast<int>(direction));
+            can_interface.sendCommand(current_floor, ElevatorState::status, static_cast<int>(direction), doorOpen);
         }
 
         // 5. dest 도착인지 확인
@@ -69,14 +69,16 @@ void Elevator::updateDirection() {
 void Elevator::stopAndOpenDoor() {
     // receive는 열어두고 내부 input만 받고 아무 로직하지 않음 (문 열린 시간 동안)
     direction = Direction::Stop;
+    std::this_thread::sleep_for(std::chrono::seconds(1)); // 문 열리는데 걸리는 시간
     dest_floor = -1;
     doorOpen = true;
-    can_interface.sendCommand(current_floor, ElevatorState::status, static_cast<int>(direction));
+    can_interface.sendCommand(current_floor, ElevatorState::status, static_cast<int>(direction), doorOpen);
     // '문 열림' 명령 처리
     std::cout << "[INFO] Arrived at floor " << current_floor << ". Door opening...\n";
     std::this_thread::sleep_for(std::chrono::seconds(config.door_open_duration_sec));
     std::cout << "[Elevator] Door closed.\n";
-    
     doorOpen = false;
+    can_interface.sendCommand(current_floor, ElevatorState::status, static_cast<int>(direction), doorOpen);
+    
     // 실제 문 열기/정지 로직 삽입
 }

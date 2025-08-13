@@ -14,22 +14,28 @@ socket.onerror = (e) => log("❌ WebSocket 오류 발생");
 
 socket.onmessage = (event) => {
   const message = JSON.parse(event.data);
-  // CAN ID가 0x000 + elevatorId 범위
-  if (message.id >= 0x000 && message.id <= 0x0FF) {
-    const elevatorId = message.id; // CAN ID에서 엘리베이터 번호
-    const [floor, door, direction] = message.data;
 
-    // 상태 텍스트 갱신
-    const status = document.getElementById(`status-${elevatorId}`);
-    const doorStr = door === 1 ? "열림" : "닫힘";
-    const dirStr = direction === 1 ? "▲" : (direction === -1 ? "▼" : "■");
-    status.textContent = `층: ${floor}, 문: ${doorStr}, 방향: ${dirStr}`;
+  if (message.type === "status") {
+    const elevatorId = message.elevatorId; // CAN ID 대신 elevatorId 사용
+    const floor = message.floor;
+    const status = message.status;
+    const door = message.door;
+    const direction = message.direction;
 
-    // 캐빈 위치 이동
-    const cab = document.getElementById(`cab-${elevatorId}`);
-    const topPx = (5 - floor) * 40; // 40px per floor
-    cab.style.top = `${topPx}px`;
-    cab.className = `cab ${door === 1 ? "open" : "closed"}`;
+    if (elevatorId >= 0x000 && elevatorId <= 0x0FF && status == 0x01) {
+      // 상태 텍스트 갱신
+      const status = document.getElementById(`status-${elevatorId}`);
+      const doorStr = door === 1 ? "열림" : "닫힘";
+      const dirStr = direction === 1 ? "▲" : (direction === 255 ? "▼" : "■");
+      status.textContent = `층: ${floor}, 문: ${doorStr}, 방향: ${dirStr}`;
+
+      // 캐빈 위치 이동
+      const cab = document.getElementById(`cab-${elevatorId}`);
+      const topPx = (5 - floor) * 40; // 40px per floor
+      cab.style.top = `${topPx}px`;
+      cab.className = `cab ${door === 1 ? "open" : "closed"}`;
+    }
+    
   }
 };
 
