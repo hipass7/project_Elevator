@@ -1,6 +1,6 @@
 const socket = new WebSocket(`ws://${location.host}`);
 
-const floors = [5, 4, 3, 2, 1];
+const floors = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 const logEl = document.getElementById("log");
 
 // 로그 기록
@@ -31,7 +31,7 @@ socket.onmessage = (event) => {
 
       // 캐빈 위치 이동
       const cab = document.getElementById(`cab-${elevatorId}`);
-      const topPx = (5 - floor) * 40; // 40px per floor
+      const topPx = (10 - floor) * 40; // 40px per floor
       cab.style.top = `${topPx}px`;
       cab.className = `cab ${door === 1 ? "open" : "closed"}`;
     }
@@ -69,7 +69,7 @@ floors.forEach(f => {
   label.innerText = `${f}층`;
   row.appendChild(label);
 
-  if (f < 5) {
+  if (f < 10) {
     const upBtn = document.createElement("button");
     upBtn.className = "btn";
     upBtn.innerText = "▲";

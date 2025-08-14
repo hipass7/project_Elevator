@@ -23,5 +23,5 @@ private:
     int current_floor = 1;
     int dest_floor = -1;
     Direction direction = Direction::Stop;;
-    bool doorOpen;
+    bool doorOpen = false;
 };

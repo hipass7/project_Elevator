@@ -1,0 +1,6 @@
+{
+    "id": 2,
+    "door_open_duration_sec": 5,
+    "disabled_buttons": [2, 5],
+    "can_interface": "vcan0"
+}

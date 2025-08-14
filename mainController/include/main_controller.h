@@ -6,6 +6,7 @@
 #include <memory>
 #include <string>
 #include <map>
+#include <algorithm>
 
 class MainController {
 public:

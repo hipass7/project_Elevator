@@ -66,15 +66,14 @@ void MainController::initialize() {
 // 시스템 메인 루프 실행
 void MainController::run() {
     std::cout << "[mainController] System running..." << std::endl;
-
+    int temp = 0;
     while (true) {
         canInterface.receiveMessages(); // 이제 이 함수는 논블로킹입니다.
         requests = canInterface.requests;
         for (auto& rq : requests) {
             // 해당 요청이 어디가면 좋을 지 검사
-            for (auto& ev : evMap) {
-                ev.second.emplace_back(rq.first);
-            }
+            temp = (temp % 2) + 1;
+            evMap[temp].emplace_back(rq.first);
         }
         // 다른 주기적인 작업들을 여기에 추가할 수 있습니다.
         for (auto& ev : evMap) {
