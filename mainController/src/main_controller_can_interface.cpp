@@ -144,42 +144,12 @@ void MainControllerCANInterface::sendCommand(int elevator_id, const std::vector<
 }
 
 void MainControllerCANInterface::receiveMessages() {
-    requests.clear();
     struct can_frame frame;
     // Use a longer timeout for general message receiving
     if (receiveFrame(frame, 0)) { 
         processIncomingFrame(frame);
     }
 }
-
-void MainControllerCANInterface::processIncomingFrame(const struct can_frame& frame) {
-    // Check if it's a button press from a panel
-    if (frame.can_id >= 0x100 && frame.can_id <= 0x1FF) {
-        int elevator_id = frame.can_id - 0x100;
-        int floor = frame.data[0];
-        bool is_up_button = (frame.data[1] == 0x01);
-        std::cout << "[MAIN] Received button press from panel for elevator " << elevator_id 
-                  << " at floor " << floor << " (" << (is_up_button ? "UP" : "DOWN") << ")\n";
-        requests.emplace_back(floor, is_up_button);
-        // Here you would add the request to the elevator's queue
-    }
-    // Check if it's a status update from an elevator
-    else if (frame.can_id >= 0x000 && frame.can_id <= 0x0FF) {
-        int elevator_id = frame.can_id;
-        int current_floor = frame.data[0];
-        int elevator_status = frame.data[1];
-        int direction = frame.data[2];
-        int door = frame.data[3];
-        std::cout << "[MAIN] Received status from elevator " << elevator_id 
-                  << ": currently at floor " << current_floor 
-                  << ": elevator direction " << direction << "\n";
-        // Here you would update the elevator's state
-        if (direction == 0 && requests.size() > 0) {
-            requests.erase(requests.begin());
-        }
-    }
-}
-
 
 bool MainControllerCANInterface::receiveFrame(struct can_frame& frame, int timeout_ms) {
 #if defined(__linux__)
@@ -202,4 +172,32 @@ bool MainControllerCANInterface::receiveFrame(struct can_frame& frame, int timeo
     }
 #endif
     return false;
+}
+
+void MainControllerCANInterface::processIncomingFrame(const struct can_frame& frame) {
+    // Check if it's a button press from a panel
+    if (frame.can_id >= 0x100 && frame.can_id <= 0x1FF) {
+        int elevator_id = frame.can_id - 0x100;
+        int floor = frame.data[0];
+        bool is_up_button = (frame.data[1] == 0x01);
+        std::cout << "[MAIN] Received button press from panel for elevator " << elevator_id 
+                  << " at floor " << floor << " (" << (is_up_button ? "UP" : "DOWN") << ")\n";
+        panelRequest = {floor, is_up_button};
+        updatePanelRequest = true;
+        // Here you would add the request to the elevator's queue
+    }
+    // Check if it's a status update from an elevator
+    else if (frame.can_id >= 0x000 && frame.can_id <= 0x0FF) {
+        int elevator_id = frame.can_id;
+        int current_floor = frame.data[0];
+        int elevator_status = frame.data[1];
+        int direction = frame.data[2];
+        int door = frame.data[3];
+        std::cout << "[MAIN] Received status from elevator " << elevator_id 
+                  << ": currently at floor " << current_floor 
+                  << ": elevator direction " << direction << "\n";
+        // Here you would update the elevator's state
+        evMap->at(elevator_id).currentFloor = current_floor;
+        evMap->at(elevator_id).direction = direction;
+    }
 }

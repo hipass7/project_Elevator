@@ -26,7 +26,7 @@ socket.onmessage = (event) => {
       // 상태 텍스트 갱신
       const status = document.getElementById(`status-${elevatorId}`);
       const doorStr = door === 1 ? "열림" : "닫힘";
-      const dirStr = direction === 1 ? "▲" : (direction === 255 ? "▼" : "■");
+      const dirStr = direction === 2 ? "▲" : (direction === 0 ? "▼" : "■");
       status.textContent = `층: ${floor}, 문: ${doorStr}, 방향: ${dirStr}`;
 
       // 캐빈 위치 이동

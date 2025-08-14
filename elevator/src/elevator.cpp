@@ -2,27 +2,54 @@
 #include <iostream>
 #include <thread>
 #include <chrono>
+#include <mutex>
 
 Elevator::Elevator(const std::string& config_path)
     : config(ElevatorConfig::loadFromFile(config_path)), 
       can_interface(config), 
-      current_floor(0) {
-    std::cout << "[Elevator] Initialized elevator ID " << config.id << "\n";
+      current_floor(1) {
+        std::cout << "[Elevator] Initialized elevator ID " << config.id << "\n";
+        canThread = std::thread(&Elevator::canListenerLoop, this);
+}
+
+Elevator::~Elevator() {
+    running = false;
+    if (canThread.joinable()) {
+        canThread.join();
+    }
+}
+
+void Elevator::canListenerLoop() {
+    int dest = -1;
+    while (running) {
+        if (can_interface.receiveCommand(dest)) {
+            if (dest == 0) {
+                dest_floor = -1; // 0은 정지 명령
+                direction = Direction::Stop;
+                std::cout << "[CAN] Received stop command.\n";
+            } else {
+                dest_floor = dest;
+            }
+            updateDirection();
+            std::cout << "[CAN] Received destination: " << dest_floor << std::endl;
+        }
+    }
 }
 
 void Elevator::run() {
     std::cout << "[Elevator] Running elevator logic...\n";
     can_interface.sendCommand();
+    can_interface.sendCommand(current_floor, ElevatorState::status, static_cast<int>(direction), doorOpen);
     while (true) {
         // 엘리베이터의 현재 위치, 방향(위/아래/정지), 상태(열림/닫힘/긴급) 확인 // 기존
-        int dest = 0;
+        //int dest = 0;
 
         // 1. dest 확인
-        if (can_interface.receiveCommand(dest)) {
-            dest_floor = dest;
-            updateDirection();
-            std::cout << dest_floor << std::endl;
-        }
+        // if (can_interface.receiveCommand(dest)) {
+        //     dest_floor = dest;
+        //     updateDirection();
+        //     std::cout << dest_floor << std::endl;
+        // }
 
         // 2. 새로운 엘리베이터 위치 파악 (센서 input)
         int now_loc = checkCurrentFloor();
@@ -53,7 +80,7 @@ void Elevator::run() {
 int Elevator::checkCurrentFloor() {
     // 센서로 확인 (지금은 임시)
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-    return current_floor + static_cast<int8_t>(direction);
+    return current_floor + static_cast<int8_t>(direction) - 1;
 }
 
 void Elevator::updateDirection() {
@@ -70,7 +97,6 @@ void Elevator::stopAndOpenDoor() {
     // receive는 열어두고 내부 input만 받고 아무 로직하지 않음 (문 열린 시간 동안)
     direction = Direction::Stop;
     std::this_thread::sleep_for(std::chrono::seconds(1)); // 문 열리는데 걸리는 시간
-    dest_floor = -1;
     doorOpen = true;
     can_interface.sendCommand(current_floor, ElevatorState::status, static_cast<int>(direction), doorOpen);
     // '문 열림' 명령 처리

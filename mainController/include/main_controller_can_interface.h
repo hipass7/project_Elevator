@@ -1,6 +1,13 @@
 #pragma once
 
 #include "manifest.h"  // 메인 컨트롤러 설정 정보
+#include <map>
+
+struct ElevatorState {
+    int currentFloor = 1;
+    int direction = 1; // 2: up, 0: down, 1: idle
+    std::vector<int> targets;
+};
 
 class MainControllerCANInterface {
 public:
@@ -9,6 +16,7 @@ public:
     // Initialization
     bool initializeElevator(int& elevator_id);
     bool initializePanel(int elevator_id, int floor);
+    void setEvMap(std::map<int, ElevatorState>* map) { evMap = map; }
 
     // Commands
     void sendMoveCommand(int elevator_id, int floor);
@@ -18,11 +26,13 @@ public:
     // Receiving
     void receiveMessages();
 
-    std::vector<std::pair<int, bool>> requests;
+    std::pair<int, bool> panelRequest;
+    bool updatePanelRequest = false;
 
 private:
     int socket_fd;
     std::string can_interface;
+    std::map<int, ElevatorState>* evMap = nullptr;
 
     bool initSocket();
     bool receiveFrame(struct can_frame& frame, int timeout_ms);

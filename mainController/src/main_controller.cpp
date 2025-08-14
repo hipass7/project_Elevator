@@ -59,7 +59,7 @@ void MainController::initialize() {
         }
         panelList.push_back(panelId);
     }
-
+    canInterface.setEvMap(&evMap);
     std::cout << "[mainController] Initialization completed." << std::endl;
 }
 
@@ -69,21 +69,87 @@ void MainController::run() {
     int temp = 0;
     while (true) {
         canInterface.receiveMessages(); // 이제 이 함수는 논블로킹입니다.
-        requests = canInterface.requests;
-        for (auto& rq : requests) {
-            // 해당 요청이 어디가면 좋을 지 검사
-            temp = (temp % 2) + 1;
-            evMap[temp].emplace_back(rq.first);
+        if (canInterface.updatePanelRequest) {
+            canInterface.updatePanelRequest = false;
+            panelRequest = canInterface.panelRequest;
+            scheduleElevators();
         }
-        // 다른 주기적인 작업들을 여기에 추가할 수 있습니다.
-        for (auto& ev : evMap) {
-            if (ev.second.size() > 0) {
-                canInterface.sendMoveCommand(ev.first, ev.second[0]);
-                ev.second.erase(ev.second.begin());
+        // 3. 각 EV에 다음 목적지 하나만 보내기
+        for (auto& [evId, evState] : evMap) {
+            for (int t : evState.targets) {
+                std::cout << t << " ";
+            }
+            // std::cout << " #" << evId << std::endl;
+            if (!evState.targets.empty()) {
+                if ((evState.currentFloor == evState.targets[0]) && evState.direction == 1) {
+                    evState.targets.erase(evState.targets.begin());
+                    if (!evState.targets.empty()) {
+                        canInterface.sendMoveCommand(evId, evState.targets[0]);
+                        std::cout << "[MAIN] Elevator " << evId 
+                                << " moving to next target floor " << evState.targets[0] << "\n";
+                    }
+                    else {
+                        std::cout << "[MAIN] Elevator " << evId 
+                                << " has no more targets, going idle.\n";
+                        canInterface.sendMoveCommand(evId, 0);
+                    }
+                }
             }
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(scanIntervalMs));
     }
 
     std::cout << "[mainController] System stopped." << std::endl;
+}
+
+void MainController::scheduleElevators() {
+    // 외부 요청 처리
+
+    int reqFloor = panelRequest.first;
+    bool reqUp = panelRequest.second;
+
+    // 1. 가장 적합한 엘리베이터 찾기
+    int bestEv = -1;
+    int minDistance = INT_MAX;
+
+    for (auto& [evId, evState] : evMap) {
+        int distance = INT_MAX;
+
+        if (evState.direction == 1) {
+            // idle이면 단순 거리
+            distance = abs(evState.currentFloor - reqFloor);
+        } else if (evState.direction == 2 && reqFloor >= evState.currentFloor) {
+            distance = reqFloor - evState.currentFloor; // 올라가는 중 요청이 위에 있으면 OK
+        } else if (evState.direction == 0 && reqFloor <= evState.currentFloor) {
+            distance = evState.currentFloor - reqFloor; // 내려가는 중 요청이 아래에 있으면 OK
+        }
+
+        if (distance < minDistance) {
+            minDistance = distance;
+            bestEv = evId;
+        }
+    }
+
+    if (bestEv != -1) {
+        ElevatorState& ev = evMap[bestEv];
+
+        int dest = ev.targets.empty() ? -1 : ev.targets[0];
+        // 2. targets에 올바른 위치에 삽입
+        if (ev.direction >= 1) { // 올라가는 중 or idle
+            ev.targets.push_back(reqFloor);
+            std::sort(ev.targets.begin(), ev.targets.end());
+        } else { // 내려가는 중
+            ev.targets.push_back(reqFloor);
+            std::sort(ev.targets.rbegin(), ev.targets.rend());
+        }
+
+        if (dest != ev.targets[0]) {
+            canInterface.sendMoveCommand(bestEv, ev.targets[0]);
+            std::cout << "[MAIN] Scheduled elevator " << bestEv 
+                      << " to move to floor " << ev.targets[0] << "\n";
+        } else {
+            std::cout << "[MAIN] Elevator " << bestEv 
+                      << " is already at the target floor " << dest << "\n";
+        }
+    }
 }
