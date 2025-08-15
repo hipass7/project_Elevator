@@ -1,9 +1,11 @@
 #include "elevator_config.h"
-#include <nlohmann/json.hpp>
+
 #include <fstream>
 #include <iostream>
+#include <nlohmann/json.hpp>
 
-ElevatorConfig ElevatorConfig::loadFromFile(const std::string& path) {
+ElevatorConfig ElevatorConfig::loadFromFile(const std::string& path)
+{
     std::ifstream file(path);
     nlohmann::json j;
     file >> j;
@@ -12,6 +14,5 @@ ElevatorConfig ElevatorConfig::loadFromFile(const std::string& path) {
         j["id"].get<int>(),
         j["door_open_duration_sec"].get<int>(),
         j["disabled_buttons"].get<std::vector<int>>(),
-        j["can_interface"].get<std::string>()
-    };
+        j["can_interface"].get<std::string>()};
 }

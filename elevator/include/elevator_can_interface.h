@@ -2,24 +2,29 @@
 
 #include "elevator_config.h"
 
-enum class ElevatorState : uint8_t {
-    emergency = 0,   // true면 비상 상황
-    status = 1,   // 예: 0=Idle, 1=Moving, 2=Door Open ...
-    request = 2  // 요청 층
+enum class ElevatorState : uint8_t
+{                     // data[1] 통해서 보낼 상태
+    Emergency = 0,    // emergency state if true
+    Status = 1,       // Current Floor
+    Request = 2,      // Internal Request
+    Initialize = 255  // Initialization Command
 };
 
-class ElevatorCANInterface {
-public:
-    explicit ElevatorCANInterface(const ElevatorConfig& config);
+class Elevator;  // Forward declaration
+
+class ElevatorCANInterface
+{
+   public:
+    ElevatorCANInterface(Elevator& elevator, const ElevatorConfig& config);
     ~ElevatorCANInterface();
 
-    void sendCommand(int floor, const ElevatorState& state, int direction, bool door);   // 엘리베이터 현재 층 송신
-    void sendCommand();
-    bool receiveCommand(int& dest);  // 제어 명령 수신 (예: 문 열림 등)
+    bool sendCommand(const ElevatorState& state);  // 엘리베이터 현재 층 송신
+    bool receiveCommand(int& dest);                // 제어 명령 수신 (예: 문 열림 등)
 
-private:
+   private:
     bool initSocket();
 
+    Elevator& elevatorRef;  // Reference to the Elevator object
     int socket_fd;
     int id;
     std::string can_interface;

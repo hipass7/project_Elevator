@@ -1,8 +1,9 @@
 #pragma once
-#include <vector>
 #include <string>
+#include <vector>
 
-struct ElevatorConfig {
+struct ElevatorConfig
+{
     int id;
     int door_open_duration_sec;
     std::vector<int> disabled_buttons;
