@@ -1,36 +1,27 @@
 #include "manifest.h"
-#include <nlohmann/json.hpp>
+
 #include <fstream>
 #include <iostream>
+#include <nlohmann/json.hpp>
 #include <stdexcept>
 
 using json = nlohmann::json;
 
-ManifestLoader::ManifestLoader() = default;
-ManifestLoader::ManifestLoader(const std::string config) {
-    loadFromFile(config);
-}
-
-ManifestLoader::~ManifestLoader() = default;
-
-void ManifestLoader::loadFromFile(const std::string& filePath) {
-    std::ifstream file(filePath);
-    if (!file.is_open()) {
-        throw std::runtime_error("Cannot open config file: " + filePath);
+ControllerConfig ControllerConfig::loadFromFile(const std::string& path)
+{
+    std::ifstream file(path);
+    if (!file.is_open())
+    {
+        throw std::runtime_error("Cannot open config file: " + path);
     }
 
     json j;
     file >> j;
 
-    config.num_floors = j["num_floors"].get<int>();
-    config.num_elevators = j["num_elevators"].get<int>();
-    config.can_interface = j["can_interface"].get<std::string>();
-    config.building_name = j["building_name"].get<std::string>();
-    config.floor_panel_scan_interval_ms = j["floor_panel_scan_interval_ms"].get<int>();
-
-    std::cout << "[ManifestLoader] Loaded config for building: " << config.building_name << "\n";
-}
-
-const ControllerConfig& ManifestLoader::getConfig() const {
-    return config;
+    return ControllerConfig{
+        j["num_floors"].get<int>(),
+        j["num_elevators"].get<int>(),
+        j["can_interface"].get<std::string>(),
+        j["floor_panel_scan_interval_ms"].get<int>(),
+        j["building_name"].get<std::string>()};
 }

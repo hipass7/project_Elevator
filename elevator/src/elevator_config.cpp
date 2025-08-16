@@ -4,10 +4,16 @@
 #include <iostream>
 #include <nlohmann/json.hpp>
 
+using json = nlohmann::json;
+
 ElevatorConfig ElevatorConfig::loadFromFile(const std::string& path)
 {
     std::ifstream file(path);
-    nlohmann::json j;
+    if (!file.is_open())
+    {
+        throw std::runtime_error("Cannot open config file: " + path);
+    }
+    json j;
     file >> j;
 
     return ElevatorConfig{

@@ -1,23 +1,26 @@
 #pragma once
 
-#include "manifest.h"
-#include "main_controller_can_interface.h"
-#include <vector>
-#include <memory>
-#include <string>
-#include <map>
 #include <algorithm>
 #include <climits>
+#include <map>
+#include <memory>
+#include <string>
+#include <vector>
 
-class MainController {
-public:
-    explicit MainController(const ControllerConfig& config);
+#include "main_controller_can_interface.h"
+#include "manifest.h"
+
+class MainController
+{
+   public:
+    explicit MainController(const std::string& config_path);
     void initialize();
     void printConfigSummary() const;
     void run();
     void scheduleElevators();
 
-private:
+   private:
+    ControllerConfig config;
     std::string buildingName;
     int numFloors;
     int numElevators;
