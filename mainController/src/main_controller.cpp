@@ -125,55 +125,89 @@ void MainController::run()
 
 void MainController::scheduleElevators()
 {
-    // 외부 요청 처리
-
     int reqFloor = panelRequest.first;
     bool reqUp = panelRequest.second;
 
-    // 1. 가장 적합한 엘리베이터 찾기
     int bestEv = -1;
-    int minDistance = INT_MAX;
+    int minCost = INT_MAX;
 
+    // 1. 먼저 방향이 맞는 엘리베이터 탐색
     for (auto& [evId, evState] : evMap)
     {
+        bool directionMatch = false;
         int distance = INT_MAX;
 
-        if (evState.direction == 1)
+        if (evState.direction == 1) // idle
         {
-            // idle이면 단순 거리
+            directionMatch = true;
             distance = abs(evState.currentFloor - reqFloor);
         }
-        else if (evState.direction == 2 && reqFloor >= evState.currentFloor)
+        else if (evState.direction == 2 && reqUp && reqFloor >= evState.currentFloor)
         {
-            distance = reqFloor - evState.currentFloor;  // 올라가는 중 요청이 위에 있으면 OK
+            // 올라가는 중 + 요청이 위에 있음
+            directionMatch = true;
+            distance = reqFloor - evState.currentFloor;
         }
-        else if (evState.direction == 0 && reqFloor <= evState.currentFloor)
+        else if (evState.direction == 0 && !reqUp && reqFloor <= evState.currentFloor)
         {
-            distance = evState.currentFloor - reqFloor;  // 내려가는 중 요청이 아래에 있으면 OK
+            // 내려가는 중 + 요청이 아래에 있음
+            directionMatch = true;
+            distance = evState.currentFloor - reqFloor;
         }
 
-        if (distance < minDistance)
+        if (directionMatch && distance < minCost)
         {
-            minDistance = distance;
+            minCost = distance;
             bestEv = evId;
         }
     }
 
+    // 2. 방향이 맞는 엘리베이터가 없다면, "모든 일정 끝낸 후" 기준으로 배정
+    if (bestEv == -1)
+    {
+        for (auto& [evId, evState] : evMap)
+        {
+            int simulatedPos = evState.currentFloor;
+            int totalDistance = 0;
+
+            // 현재 targets를 끝까지 돌았을 때의 최종 위치 & 총 거리 추정
+            for (int t : evState.targets)
+            {
+                totalDistance += abs(simulatedPos - t);
+                simulatedPos = t;
+            }
+
+            // 마지막 target 이후 reqFloor까지 이동
+            totalDistance += abs(simulatedPos - reqFloor);
+
+            if (totalDistance < minCost)
+            {
+                minCost = totalDistance;
+                bestEv = evId;
+            }
+        }
+    }
+
+    // 3. bestEv에 요청 할당
     if (bestEv != -1)
     {
         ElevatorState& ev = evMap[bestEv];
-
         int dest = ev.targets.empty() ? -1 : ev.targets[0];
-        // 2. targets에 올바른 위치에 삽입
-        if (ev.direction >= 1)
-        {  // 올라가는 중 or idle
+
+        if (ev.direction == 1 || ev.direction == 2) // idle or up
+        {
             ev.targets.push_back(reqFloor);
             std::sort(ev.targets.begin(), ev.targets.end());
         }
-        else
-        {  // 내려가는 중
+        else if (ev.direction == 0) // down
+        {
             ev.targets.push_back(reqFloor);
             std::sort(ev.targets.rbegin(), ev.targets.rend());
+        }
+        else
+        {
+            // 방향 안 맞을 때 → 그냥 마지막에 붙인다
+            ev.targets.push_back(reqFloor);
         }
 
         if (dest != ev.targets[0])
@@ -189,3 +223,4 @@ void MainController::scheduleElevators()
         }
     }
 }
+
